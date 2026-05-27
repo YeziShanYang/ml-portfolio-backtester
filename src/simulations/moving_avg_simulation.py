@@ -1,4 +1,5 @@
 import pandas as pd
+import yfinance as yf
 
 """
 Moving Average Simulation
@@ -7,21 +8,21 @@ Strategy:
   - Sell when the closing price rises above the 5-day moving average (overpriced).
 """
 
-def get_stock_data(ticker):
+def get_stock_data(ticker, period="60d", interval="1d"):
     print(f"Fetching historical data for {ticker}...")
     
     # We use yf.Ticker instead of yf.download because we might want to get other info later
     stock = yf.Ticker(ticker)
-    data = stock.history(period="60d", interval="1d")
+    data = stock.history(period=period, interval=interval)
     
     return data
 
-def run_moving_avg_simulation(ticker):
+def run_moving_avg_simulation(ticker, period="60d", interval="1d", window="5d"):
     # Fetch historical stock data
-    pandas_df = get_stock_data(ticker)
-    pandas_df['MA5'] = pandas_df['Close'].rolling(window=5).mean()
+    pandas_df = get_stock_data(ticker, period=period, interval=interval)
+    pandas_df['MA'] = pandas_df['Close'].rolling(window=window).mean()
 
-    # Clear rows w/ empty cells (first 4 rows can't calculate)
+    # Clear rows w/ empty cells (first few rows can't calculate)
     pandas_df=pandas_df.dropna()
 
     # Setup initial conditions
@@ -36,15 +37,15 @@ def run_moving_avg_simulation(ticker):
     # Run simulation
     for (date, row) in pandas_df.iterrows():
         close_price = row['Close']
-        ma5_price = row['MA5']
+        ma_price = row['MA']
 
          # Checks to see if we should buy or sell
-        if close_price < ma5_price and not stock_owned:
+        if close_price < ma_price and not stock_owned:
             shares_owned = capital / close_price
             capital = 0
             stock_owned = True
             print(f"BUY on {date.date()}: Bought {shares_owned:.2f} shares at ${close_price:.2f}")
-        elif close_price > ma5_price and stock_owned:
+        elif close_price > ma_price and stock_owned:
             capital = shares_owned * close_price
             shares_owned = 0
             stock_owned = False
