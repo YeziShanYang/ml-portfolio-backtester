@@ -4,8 +4,9 @@ import yfinance as yf
 """
 Moving Average Simulation
 Strategy: 
-  - Buy when the closing price drops below the 5-day moving average (underpriced).
-  - Sell when the closing price rises above the 5-day moving average (overpriced).
+  - Buy when the closing price drops below the 5-day moving average (underpriced)
+  - Sell when the closing price rises above the 5-day moving average (overpriced)
+  - Simulation defaults to 10000 to make %ages easy
 """
 
 def get_stock_data(ticker, period="60d", interval="1d"):

@@ -1,5 +1,9 @@
 """
-Stock Screener: filters stocks based on criteria
+Stock Screener: finds potential stocks based on criteria
+  - fetch_screener_data -> gets stock data
+  - find_percentage_drops -> looks for stocks that are down in price from peak
+  - find_volume_spikes -> looks for stocks that are heavily bought compared to avg
+  - find_new_highs -> looks for stocks that are trading at new highs
 """
 
 import pandas as pd
