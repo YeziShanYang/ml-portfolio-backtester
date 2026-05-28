@@ -9,10 +9,10 @@ Stock Screener: finds potential stocks based on criteria
 import pandas as pd
 import yfinance as yf
 
-def fetch_screener_data(tickers):
+def fetch_screener_data(tickers, period="30d", interval="1d"):
     print(f"Fetching historical data for companies: {tickers}...")
     
-    data = yf.download(tickers, period="30d", interval="1d")
+    data = yf.download(tickers, period=period, interval=interval)
     return data
 
 def find_percentage_drops(data):
