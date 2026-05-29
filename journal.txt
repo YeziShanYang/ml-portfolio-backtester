@@ -1,0 +1,6 @@
+May 28:
+Created first backtest machine using RandomForestClassifier.
+Tested AAPL stock with training data MSFT, GOOGL, NVDA & experienced +38.42% returns
+Actually generated negative alpha, as buy-and-hold would've generated around ~50% returns
+To make future backtesting and tweaking easier, we would like to make our backtest-simulation
+much more object oriented by abstracting the model.
