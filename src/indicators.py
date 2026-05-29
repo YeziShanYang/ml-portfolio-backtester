@@ -1,6 +1,15 @@
 import pandas as pd
 
-def calculate_sma(df_close, window):
+"""
+So far the primary purpose of this file is to hold functions that analyze 
+and return values for use in our regression models in backtest_simulation.
+Note: format of calculation functions used in backtest_simulation must have:
+  - input: df_close (Pandas DataFrame)
+  - output: same, we'll do more manipulation in backtest_simulation
+"""
+
+
+def calculate_sma(df_close, window="5d"):
     return df_close.rolling(window=window).mean()
 
 def detect_golden_cross(sma_fast, sma_slow):
