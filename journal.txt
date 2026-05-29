@@ -1,4 +1,11 @@
+May 29:
+Changed backtest_simulation.py to make it easier to run different tests.
+Pretty sure syntax works but linear regression model performs exactly
+the same as buy & hold, so that's probably something I'll have to investigate later.
+Tomorrow I would like to test out different indicators, perhaps make another Jupyter notebook.
+
 May 28:
+Journal Created.
 Created first backtest machine using RandomForestClassifier.
 Tested AAPL stock with training data MSFT, GOOGL, NVDA & experienced +38.42% returns
 Actually generated negative alpha, as buy-and-hold would've generated around ~50% returns
