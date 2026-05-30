@@ -129,22 +129,38 @@ class BacktestEngine:
         print(f"Baseline Buy & Hold     : ${bh_final_balance:,.2f} ({bh_return:+.2f}%)")
 
 if __name__ == "__main__":
-    # setup feature dictionary
-    my_features = {
-        'sma_5':  {'func': indicators.calculate_sma, 'params': {'window': 5}},
-        'sma_20': {'func': indicators.calculate_sma, 'params': {'window': 20}},
-        'rsi':    {'func': indicators.calculate_rsi, 'params': {'window': 14}}
+    # We set binary to True for random forest because it returns a categorical 0/1
+    features_rf = {
+        'sma_trend_regime': {
+            'func': indicators.calculate_sma_crossover, 
+            'params': {'fast_window': 5, 'slow_window': 20, 'binary': True}
+        },
+        'rsi': {
+            'func': indicators.calculate_rsi,
+            'params': {'window': 14}
+        }
+    }
+    # binary is False for linreg because decimals are handled better
+    features_lr = {
+        'sma_trend_distance': {
+            'func': indicators.calculate_sma_crossover,
+            'params': {'fast_window': 5, 'slow_window': 20, 'binary': False}
+        },
+        'rsi': {
+            'func': indicators.calculate_rsi,
+            'params': {'window': 14}
+        }
     }
     
     train_pool = ["MSFT", "GOOGL", "NVDA"]
     target = "AAPL"
 
     rf_classifier = ensemble.RandomForestClassifier(n_estimators=100, random_state=42, min_samples_split=10)
-    engine_rf = BacktestEngine(model=rf_classifier, feature_configs=my_features)
+    engine_rf = BacktestEngine(model=rf_classifier, feature_configs=features_rf)
     engine_rf.run_simulation(target_ticker=target, training_tickers=train_pool, period="1y")
 
     lin_regressor = linear_model.LinearRegression()
-    engine_lr = BacktestEngine(model=lin_regressor, feature_configs=my_features)
+    engine_lr = BacktestEngine(model=lin_regressor, feature_configs=features_lr)
     engine_lr.run_simulation(target_ticker=target, training_tickers=train_pool, period="1y")
 
 
