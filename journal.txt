@@ -1,3 +1,11 @@
+May 30:
+Added feature to calculate SMA crossover instead of simply taking sma_5 and sma_20 into account.
+Obviously, just considering sma_5 and sma_20 and not their relationship isn't actually a market predictor.
+I thought that making my indicators better would fix the linreg model issue, but it still performed the exact
+same as buy & hold.
+We are still generating negative alpha with RFC, but it's +50.84% returns, which is an improvement.
+I'd like to add more features to test in the upcoming days.
+
 May 29:
 Changed backtest_simulation.py to make it easier to run different tests.
 Pretty sure syntax works but linear regression model performs exactly
