@@ -12,6 +12,19 @@ Note: format of calculation functions used in backtest_simulation must have:
 def calculate_sma(df_close, window="5d"):
     return df_close.rolling(window=window).mean()
 
+def calculate_sma_crossover(df_close, fast_window=5, slow_window=20, binary=True):
+    """
+    It probably makes more sense for us to see the relationship 
+    between fast & slow sma instead of their individual values.
+    """
+    fast_sma = calculate_sma(df_close, window=fast_window)
+    slow_sma = calculate_sma(df_close, window=slow_window)
+
+    if binary:
+        return (fast_sma > slow_sma).astype(int)
+    else:
+        return (fast_sma - slow_sma) / slow_sma
+
 def detect_golden_cross(sma_fast, sma_slow):
     """
     Scans the latest row of data to find which stocks 
