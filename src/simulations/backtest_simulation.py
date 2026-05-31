@@ -1,5 +1,6 @@
 import pandas as pd
 import yfinance as yf
+import numpy as np
 from src import stock_screener, indicators
 from sklearn import ensemble, linear_model, metrics
 
@@ -100,33 +101,62 @@ class BacktestEngine:
         shares_owned = 0
         stock_owned = False
 
+        trade_log = [] # Tracks: {'type': 'BUY/SELL', 'price': X, 'date': Y}
+        completed_trades = [] # Tracks percentage return of each closed trade
+
         for i in range(len(test_close_prices)):
             current_price = test_close_prices.iloc[i]
+            current_date = test_close_prices.index[i]
             prediction = predictions[i]
 
             if prediction == 1 and not stock_owned:
                 shares_owned = capital / current_price
                 capital = 0
                 stock_owned = True
+                trade_log.append({'type': 'BUY', 'price': current_price, 'date': current_date})
             elif prediction == 0 and stock_owned:
                 capital = shares_owned * current_price
                 shares_owned = 0
                 stock_owned = False
+                buy_price = trade_log[-1]['price']
+                trade_return = ((current_price - buy_price) / buy_price) * 100
+                completed_trades.append(trade_return)
+                trade_log.append({'type': 'SELL', 'price': current_price, 'date': current_date, 'return': trade_return})
+        
+        # Clean up our open position at the end
+        if stock_owned:
+            final_price = test_close_prices.iloc[-1]
+            capital = shares_owned * final_price
+            trade_return = ((final_price - trade_log[-1]['price']) / trade_log[-1]['price']) * 100
+            completed_trades.append(trade_return)
+            trade_log.append({'type': 'SELL_END', 'price': final_price, 'date': test_close_prices.index[-1], 'return': trade_return})
         
         # Now we can evaluate how well our simulation did:
-        final_price = test_close_prices.iloc[-1]
-        final_balance = capital if not stock_owned else (shares_owned * final_price)
+        final_balance = capital
         total_return = ((final_balance - starting_capital) / starting_capital) * 100
+        
+        bh_shares = starting_capital / test_close_prices.iloc[0]
+        bh_final_balance = bh_shares * test_close_prices.iloc[-1]
+        bh_return = ((test_close_prices.iloc[-1] - test_close_prices.iloc[0]) / test_close_prices.iloc[0]) * 100
 
         # We calculate the returns for buy-and-hold so we can compare & calculate alpha
-        bh_shares = starting_capital / test_close_prices.iloc[0]
-        bh_final_balance = bh_shares * final_price
-        bh_return = ((bh_final_balance - starting_capital) / starting_capital) * 100
+        total_trades = len(completed_trades)
+        winning_trades = sum(1 for r in completed_trades if r > 0)
+        win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0.0
 
         print(f"\nResults of simulation for {target_ticker} based on {training_tickers} ({type(self.model).__name__})")
+        print(f"Total Executed Trades   : {total_trades}")
+        print(f"Strategy Win Rate       : {win_rate:.2f}%")
+        if total_trades > 0:
+            print(f"Avg Return Per Trade    : {np.mean(completed_trades):+.2f}%")
+            print(f"Best Trade Performance  : {max(completed_trades):+.2f}%")
+            print(f"Worst Trade Performance : {min(completed_trades):+.2f}%")
         print(f"Features Utilized       : {list(self.feature_configs.keys())}")
         print(f"Ending Model Capital    : ${final_balance:,.2f} ({total_return:+.2f}%)")
         print(f"Baseline Buy & Hold     : ${bh_final_balance:,.2f} ({bh_return:+.2f}%)")
+
+        # Save logs to instance
+        self.last_trade_log = pd.DataFrame(trade_log)
 
 if __name__ == "__main__":
     # We set binary to True for random forest because it returns a categorical 0/1
