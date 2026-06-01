@@ -1,3 +1,19 @@
+May 31:
+I want to see why my model is underperforming. For example, it could be that it isn’t doing so well because 
+it buys at the wrong time and then it goes down. Then, I could look to fix that by making it a bit harder 
+to buy by cross-checking multiple models’ results together. Or, it could be that it isn’t buying at the 
+right times, in which case I would have to look into another solution.
+So, I added performance diagnostics to backtest_simulation. Based on results:
+  - While our RFC has a winrate of 60.78%, it is executing trades way to frequently (51 executed trades)
+  - Just as suspected, LinearRegression isn't trading at all, which kind of makes sense because APPL went up by a lot.
+I further tested on Salesforce (CRM), a stock that went down:
+  - Our RFC actually generated positive alpha now, which is good! -14.78% against -26.41% B&H
+  - Linear Regression still isn't trading.
+My conclusion is this: RFC trades too much (with CRM it still trades 52 times), while LinReg doesn't trade enough.
+There are two main things I would like to try tomorrow:
+  1. It's possible that I could try to make the two work together, and only buy if both want to.
+  2. Since my training data consists of tech stocks that are rising, it's quite biased. I'll see if I can gather a wider pool
+
 May 30:
 Added feature to calculate SMA crossover instead of simply taking sma_5 and sma_20 into account.
 Obviously, just considering sma_5 and sma_20 and not their relationship isn't actually a market predictor.
