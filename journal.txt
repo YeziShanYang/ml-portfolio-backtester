@@ -1,3 +1,11 @@
+June 1:
+In an effort to improve the models, I added three new features: bollinger position, rate of change, and volume acceleration.
+I'm pretty sure these helped, for RFC at least, which saw positive alpha for the first time against buy & hold at +51.66%.
+It also only executed 7 trades, meaning that it was more careful, with an 85.71% winrate! However, the linear Regression
+model still isn't doing much. I think it's best if we just focus on the other one for now; this model seems to not work well
+with our new volume features, and is throwing errors related to dividing by 0.
+From this point on, I'll focus on RFC.
+
 May 31:
 I want to see why my model is underperforming. For example, it could be that it isn’t doing so well because 
 it buys at the wrong time and then it goes down. Then, I could look to fix that by making it a bit harder 

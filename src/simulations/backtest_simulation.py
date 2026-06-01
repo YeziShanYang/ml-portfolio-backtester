@@ -216,11 +216,11 @@ if __name__ == "__main__":
     
     train_pool = [
         "NVDA", "MSFT", "AVGO", "NOW", 
-        "ORCL", "CRM", "TEAM", "INTC", 
+        "ORCL", "AAPL", "TEAM", "INTC", 
         "SNOW", "WIX", "AMD", "CSCO", 
         "SHOP", "AMZN"
     ]
-    target = "AAPL"
+    target = "CRM"
 
     rf_classifier = ensemble.RandomForestClassifier(n_estimators=100, random_state=42, min_samples_split=10)
     engine_rf = BacktestEngine(model=rf_classifier, feature_configs=features_rf)
