@@ -189,6 +189,22 @@ if __name__ == "__main__":
             'data_type': 'Volume' 
         }
     }
+    
+    train_pool = [
+        "NVDA", "MSFT", "AVGO", "NOW", 
+        "ORCL", "AAPL", "TEAM", "INTC", 
+        "SNOW", "WIX", "AMD", "CSCO", 
+        "SHOP", "AMZN"
+    ]
+    target = "CRM"
+
+    rf_classifier = ensemble.RandomForestClassifier(n_estimators=100, random_state=42, min_samples_split=10)
+    engine_rf = BacktestEngine(model=rf_classifier, feature_configs=features_rf)
+    engine_rf.run_simulation(target_ticker=target, training_tickers=train_pool, period="1y")
+
+
+
+    """
     # binary is False for linreg because decimals are handled better
     features_lr = {
         'sma_trend_distance': {
@@ -213,19 +229,8 @@ if __name__ == "__main__":
             'data_type': 'Volume' 
         }
     }
-    
-    train_pool = [
-        "NVDA", "MSFT", "AVGO", "NOW", 
-        "ORCL", "AAPL", "TEAM", "INTC", 
-        "SNOW", "WIX", "AMD", "CSCO", 
-        "SHOP", "AMZN"
-    ]
-    target = "CRM"
-
-    rf_classifier = ensemble.RandomForestClassifier(n_estimators=100, random_state=42, min_samples_split=10)
-    engine_rf = BacktestEngine(model=rf_classifier, feature_configs=features_rf)
-    engine_rf.run_simulation(target_ticker=target, training_tickers=train_pool, period="1y")
 
     lin_regressor = linear_model.LinearRegression()
     engine_lr = BacktestEngine(model=lin_regressor, feature_configs=features_lr)
     engine_lr.run_simulation(target_ticker=target, training_tickers=train_pool, period="1y")
+    """
