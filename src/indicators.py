@@ -25,6 +25,37 @@ def calculate_sma_crossover(df_close, fast_window=5, slow_window=20, binary=True
     else:
         return (fast_sma - slow_sma) / slow_sma
 
+def calculate_bollinger_position(df_close, window=20, num_std=2):
+    """
+    Calculates the position of the price relative to the Bollinger Bands.
+    Returns a continuous scale where 0 is the middle band, >0 is upper, <0 is lower.
+    """
+    rolling_mean = df_close.rolling(window=window).mean()
+    rolling_std = df_close.rolling(window=window).std()
+    
+    upper_band = rolling_mean + (num_std * rolling_std)
+    lower_band = rolling_mean - (num_std * rolling_std)
+    
+    # Calculate relative position within the bandwidth
+    position = (df_close - rolling_mean) / (upper_band - rolling_mean)
+    return position
+
+def calculate_roc(df_close, window=10):
+    """
+    Calculates the percentage Rate of Change over a specified trailing window.
+    """
+    return df_close.pct_change(periods=window)
+
+def calculate_volume_spread(df_volume, fast_window=5, slow_window=20):
+    """
+    Measures if current trading volume is accelerating compared to its baseline average.
+    """
+    fast_vol = df_volume.rolling(window=fast_window).mean()
+    slow_vol = df_volume.rolling(window=slow_window).mean()
+    
+    # Percentage distance above or below the volume baseline
+    return (fast_vol - slow_vol) / slow_vol
+
 def detect_golden_cross(sma_fast, sma_slow):
     """
     Scans the latest row of data to find which stocks 

@@ -182,7 +182,12 @@ if __name__ == "__main__":
         }
     }
     
-    train_pool = ["MSFT", "GOOGL", "NVDA"]
+    train_pool = [
+        "NVDA", "MSFT", "AVGO", "NOW", 
+        "ORCL", "CRM", "TEAM", "INTC", 
+        "SNOW", "WIX", "AMD", "CSCO", 
+        "SHOP", "AMZN"
+    ]
     target = "AAPL"
 
     rf_classifier = ensemble.RandomForestClassifier(n_estimators=100, random_state=42, min_samples_split=10)
