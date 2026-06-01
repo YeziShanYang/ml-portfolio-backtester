@@ -20,14 +20,18 @@ class BacktestEngine:
         self.target_shift = target_shift
         self.is_regressor = "Classifier" not in type(model).__name__
     
-    def build_features(self, close_df):
+    def build_features(self, full_df):
         """
         This function basically allows us to get a dictionary of Pandas Dataframes with the info we need
         and handles all of the interactions with indicators.py so we don't have to worry about it later.
         """
         features_dict = {}
         for feat, config in self.feature_configs.items():
-            features_dict[feat] = config['func'](close_df, **config['params'])
+            func = config['func']
+            params = config.get('params', {})
+            data_type = config.get('data_type', 'Close')
+            target_data = full_df[data_type]
+            features_dict[feat] = func(target_data, **params)
         return features_dict
     
     def get_training_data(self, training_tickers, close_prices, features, target_labels):
@@ -64,7 +68,7 @@ class BacktestEngine:
         close_prices = pandas_df['Close']
 
         # Thanks to our previous functions, we can build our training models really easily:
-        features = self.build_features(close_prices)
+        features = self.build_features(pandas_df)
         future_price = close_prices.shift(self.target_shift)
         if self.is_regressor:
             target_labels = (future_price - close_prices) / close_prices
@@ -78,7 +82,7 @@ class BacktestEngine:
         ticker_df = stock_screener.fetch_screener_data(target_ticker, period=period, interval=interval)
         ticker_close_prices = ticker_df['Close']
 
-        target_features = self.build_features(ticker_close_prices)
+        target_features = self.build_features(ticker_df)
 
         # We need to flatten this list, because yfinance returns dataframes with a multi-index structure.
         # We could probably solve this by building another function in stock_screener, but that's a problem for another day.
@@ -168,6 +172,19 @@ if __name__ == "__main__":
         'rsi': {
             'func': indicators.calculate_rsi,
             'params': {'window': 14}
+        },
+        'bollinger_position': {
+            'func': indicators.calculate_bollinger_position,
+            'params': {'window': 20, 'num_std': 2}
+        },
+        'price_roc': {
+            'func': indicators.calculate_roc,
+            'params': {'window': 10}
+        },
+        'volume_acceleration': {
+            'func': indicators.calculate_volume_spread,
+            'params': {'fast_window': 5, 'slow_window': 20},
+            'data_type': 'Volume' 
         }
     }
     # binary is False for linreg because decimals are handled better
@@ -179,6 +196,19 @@ if __name__ == "__main__":
         'rsi': {
             'func': indicators.calculate_rsi,
             'params': {'window': 14}
+        },
+        'bollinger_position': {
+            'func': indicators.calculate_bollinger_position,
+            'params': {'window': 20, 'num_std': 2}
+        },
+        'price_roc': {
+            'func': indicators.calculate_roc,
+            'params': {'window': 10}
+        },
+        'volume_acceleration': {
+            'func': indicators.calculate_volume_spread,
+            'params': {'fast_window': 5, 'slow_window': 20},
+            'data_type': 'Volume' 
         }
     }
     
