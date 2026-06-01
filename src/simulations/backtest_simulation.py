@@ -57,18 +57,17 @@ class BacktestEngine:
         y = training_df['target']
         return X, y
     
-    def run_simulation(self, target_ticker, training_tickers, period="1y", interval="1d"):
+    def run_simulation(self, target_ticker, training_tickers, pre_downloaded_df):
         """
         This function actually runs our simulation. Thanks to the class/OOP structure we have now,
         it just requires us to provide its target ticker and training tickers, assuming the
         features are already loaded.
         """
         # First, we get the data for training
-        pandas_df = stock_screener.fetch_screener_data(training_tickers, period=period, interval=interval)
-        close_prices = pandas_df['Close']
+        close_prices = pre_downloaded_df['Close']
 
         # Thanks to our previous functions, we can build our training models really easily:
-        features = self.build_features(pandas_df)
+        features = self.build_features(pre_downloaded_df)
         future_price = close_prices.shift(self.target_shift)
         if self.is_regressor:
             target_labels = (future_price - close_prices) / close_prices
@@ -81,8 +80,8 @@ class BacktestEngine:
         self.model.fit(X_scaled, y)
 
         # Now we get the data that we'll be testing it against
-        ticker_df = stock_screener.fetch_screener_data(target_ticker, period=period, interval=interval)
-        ticker_close_prices = ticker_df['Close']
+        ticker_df = pre_downloaded_df.xs(target_ticker, level=1, axis=1)
+        ticker_close_prices = pre_downloaded_df['Close']
 
         target_features = self.build_features(ticker_df)
 
@@ -90,11 +89,11 @@ class BacktestEngine:
         # We could probably solve this by building another function in stock_screener, but that's a problem for another day.
         target_stock_dict = {}
         for feat_name in self.feature_configs.keys():
-            target_stock_dict[feat_name] = target_features[feat_name][target_ticker]
+            target_stock_dict[feat_name] = target_features[feat_name]
         target_stock_df = pd.DataFrame(target_stock_dict).dropna()
 
         # We can now generate model predictions & flatten our data, similar to what we did with the regular backtest function
-        raw_predictions = self.model.predict(target_stock_df)
+        raw_predictions = self.model.predict(target_stock_df.values)
         if self.is_regressor:
             predictions = (raw_predictions > 0).astype(int)
         else:
@@ -150,18 +149,13 @@ class BacktestEngine:
         winning_trades = sum(1 for r in completed_trades if r > 0)
         win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0.0
 
-        print(f"\nResults of simulation for {target_ticker} based on {training_tickers} ({type(self.model).__name__})")
-        print(f"Total Executed Trades   : {total_trades}")
-        print(f"Strategy Win Rate       : {win_rate:.2f}%")
-        if total_trades > 0:
-            print(f"Avg Return Per Trade    : {np.mean(completed_trades):+.2f}%")
-            print(f"Best Trade Performance  : {max(completed_trades):+.2f}%")
-            print(f"Worst Trade Performance : {min(completed_trades):+.2f}%")
-        print(f"Features Utilized       : {list(self.feature_configs.keys())}")
-        print(f"Ending Model Capital    : ${final_balance:,.2f} ({total_return:+.2f}%)")
-        print(f"Baseline Buy & Hold     : ${bh_final_balance:,.2f} ({bh_return:+.2f}%)")
+        print(f"Target: {target_ticker:<5} | Strategy: {total_return:+.2f}% | B&H: {bh_return:+.2f}% | Alpha: {total_return - bh_return:+.2f}% | Trades: {total_trades}")
 
-        # Save logs to instance
+        self.last_strategy_return = total_return
+        self.last_bh_return = bh_return
+        self.last_alpha = total_return - bh_return
+        self.last_win_rate = win_rate
+        self.last_total_trades = total_trades
         self.last_trade_log = pd.DataFrame(trade_log)
 
 if __name__ == "__main__":
@@ -194,13 +188,40 @@ if __name__ == "__main__":
         "NVDA", "MSFT", "AVGO", "NOW", 
         "ORCL", "AAPL", "TEAM", "INTC", 
         "SNOW", "WIX", "AMD", "CSCO", 
-        "SHOP", "AMZN"
+        "SHOP", "AMZN", "CRM"
     ]
-    target = "CRM"
+
+    print(f"Downloading data for {len(train_pool)} assets from yfinance...")
+    master_df = stock_screener.fetch_screener_data(train_pool, period="1y", interval="1d")
+    print("Download Complete.")
 
     rf_classifier = ensemble.RandomForestClassifier(n_estimators=100, random_state=42, min_samples_split=10)
     engine_rf = BacktestEngine(model=rf_classifier, feature_configs=features_rf)
-    engine_rf.run_simulation(target_ticker=target, training_tickers=train_pool, period="1y")
+
+    all_strategy_returns = []
+    all_bh_returns = []
+    all_alphas = []
+    all_win_rates = []
+    all_trade_counts = []
+
+    for test_target in train_pool:
+        oos_training_pool = [ticker for ticker in train_pool if ticker != test_target]
+
+        engine_rf.run_simulation(target_ticker=test_target, training_tickers=oos_training_pool, pre_downloaded_df=master_df)
+        
+        # Cache stats on the fly
+        all_strategy_returns.append(engine_rf.last_strategy_return)
+        all_bh_returns.append(engine_rf.last_bh_return)
+        all_alphas.append(engine_rf.last_alpha)
+        all_win_rates.append(engine_rf.last_win_rate)
+        all_trade_counts.append(engine_rf.last_total_trades)
+
+    print("Summary Statistics:")
+    print(f"Average Strategy Return   : {np.mean(all_strategy_returns):+.2f}%")
+    print(f"Average Buy & Hold Return : {np.mean(all_bh_returns):+.2f}%")
+    print(f"Mean Alpha                : {np.mean(all_alphas):+.2f}%")
+    print(f"Average Strategy Win Rate : {np.mean(all_win_rates):.2f}%")
+    print(f"Average Trades Executed   : {np.mean(all_trade_counts):.1f}")
 
 
 
