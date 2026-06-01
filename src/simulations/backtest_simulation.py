@@ -2,7 +2,7 @@ import pandas as pd
 import yfinance as yf
 import numpy as np
 from src import stock_screener, indicators
-from sklearn import ensemble, linear_model, metrics
+from sklearn import ensemble, linear_model, metrics, preprocessing
 
 class BacktestEngine:
     def __init__(self, model, feature_configs, target_shift=-7):
@@ -76,7 +76,9 @@ class BacktestEngine:
             target_labels = (future_price > close_prices).astype(int)
 
         X, y = self.get_training_data(training_tickers, close_prices, features, target_labels)
-        self.model.fit(X, y)
+        scaler = preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        self.model.fit(X_scaled, y)
 
         # Now we get the data that we'll be testing it against
         ticker_df = stock_screener.fetch_screener_data(target_ticker, period=period, interval=interval)

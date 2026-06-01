@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 """
 So far the primary purpose of this file is to hold functions that analyze 
@@ -52,9 +53,12 @@ def calculate_volume_spread(df_volume, fast_window=5, slow_window=20):
     """
     fast_vol = df_volume.rolling(window=fast_window).mean()
     slow_vol = df_volume.rolling(window=slow_window).mean()
+
+    spread = (fast_vol - slow_vol) / slow_vol
+    spread = spread.replace([np.inf, -np.inf], np.nan).fillna(0)
     
     # Percentage distance above or below the volume baseline
-    return (fast_vol - slow_vol) / slow_vol
+    return spread
 
 def detect_golden_cross(sma_fast, sma_slow):
     """
