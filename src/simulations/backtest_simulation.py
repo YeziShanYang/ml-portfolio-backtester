@@ -69,7 +69,8 @@ class BacktestEngine:
         # Thanks to our previous functions, we can build our training models really easily:
         features = self.build_features(pre_downloaded_df)
         future_price = close_prices.shift(self.target_shift)
-        future_5day_avg = close_prices.iloc[::-1].rolling(window=5, min_periods=1).mean().iloc[::-1]
+        future_5day_avg = close_prices.shift(-1).rolling(window=5, min_periods=1).mean()
+        
         if self.is_regressor:
             target_labels = (future_5day_avg - close_prices) / close_prices
         else:
