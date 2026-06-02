@@ -1,3 +1,11 @@
+June 2:
+There were a few bugs in my code that I caught today. All in all, these changes actually ended up tanking my alpha as well
+as my returns. Turns out I was getting better results with incorrect training, but it's good that I caught it now, so I
+can probably just focus on increasing alpha now. I was worried that our average trades executed was 27.3, so I tried artificially
+limiting it to 3 days before selling somethign it's bought, but that didn't really help, and brought up a new problem: it can't
+sell when it wants to. So, I put in a bypass as well to help it sell whenever it drops below 7% returns, but it didn't help too 
+much either. I haven't had a lot of time to work on this recently, so I'll try to push our alpha up later.
+
 June 1:
 In an effort to improve the models, I added three new features: bollinger position, rate of change, and volume acceleration.
 I'm pretty sure these helped, for RFC at least, which saw positive alpha for the first time against buy & hold at +51.66%.
