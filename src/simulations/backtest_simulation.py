@@ -69,10 +69,11 @@ class BacktestEngine:
         # Thanks to our previous functions, we can build our training models really easily:
         features = self.build_features(pre_downloaded_df)
         future_price = close_prices.shift(self.target_shift)
+        future_5day_avg = close_prices.iloc[::-1].rolling(window=5, min_periods=1).mean().iloc[::-1]
         if self.is_regressor:
-            target_labels = (future_price - close_prices) / close_prices
+            target_labels = (future_5day_avg - close_prices) / close_prices
         else:
-            target_labels = (future_price > close_prices).astype(int)
+            target_labels = (future_5day_avg > close_prices).astype(int)
 
         X, y = self.get_training_data(training_tickers, close_prices, features, target_labels)
         scaler = preprocessing.StandardScaler()
@@ -105,6 +106,7 @@ class BacktestEngine:
         capital = starting_capital
         shares_owned = 0
         stock_owned = False
+        days_held = 0
 
         trade_log = [] # Tracks: {'type': 'BUY/SELL', 'price': X, 'date': Y}
         completed_trades = [] # Tracks percentage return of each closed trade
@@ -114,12 +116,16 @@ class BacktestEngine:
             current_date = test_close_prices.index[i]
             prediction = predictions[i]
 
+            if stock_owned:
+                days_held += 1
+
             if prediction == 1 and not stock_owned:
                 shares_owned = capital / current_price
                 capital = 0
                 stock_owned = True
                 trade_log.append({'type': 'BUY', 'price': current_price, 'date': current_date})
-            elif prediction == 0 and stock_owned:
+                days_held = 0
+            elif prediction == 0 and stock_owned and days_held >= 3:
                 capital = shares_owned * current_price
                 shares_owned = 0
                 stock_owned = False
