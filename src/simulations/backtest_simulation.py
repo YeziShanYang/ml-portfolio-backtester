@@ -1,11 +1,10 @@
 import pandas as pd
-import yfinance as yf
 import numpy as np
 from src import stock_screener, indicators
-from sklearn import ensemble, linear_model, metrics, preprocessing
+from sklearn import ensemble, preprocessing
 
 class BacktestEngine:
-    def __init__(self, model, feature_configs, target_shift=-7):
+    def __init__(self, model, feature_configs, target_shift=-7, confidence_threshold=0.60, stop_loss=0.07):
         """
         Here, 'model' is the kind of scikit-learn model we want to use.
         Since different types of models work differently, we would like to encompass
@@ -18,6 +17,9 @@ class BacktestEngine:
         self.model = model
         self.feature_configs = feature_configs
         self.target_shift = target_shift
+        self.confidence_threshold = confidence_threshold
+        self.stop_loss = stop_loss
+        self.scaler = preprocessing.StandardScaler()
         self.is_regressor = "Classifier" not in type(model).__name__
     
     def build_features(self, full_df):
@@ -25,37 +27,47 @@ class BacktestEngine:
         This function basically allows us to get a dictionary of Pandas Dataframes with the info we need
         and handles all of the interactions with indicators.py so we don't have to worry about it later.
         """
-        features_dict = {}
+        features = {}
         for feat, config in self.feature_configs.items():
             func = config['func']
             params = config.get('params', {})
             data_type = config.get('data_type', 'Close')
-            target_data = full_df[data_type]
-            features_dict[feat] = func(target_data, **params)
-        return features_dict
+            features[feat] = func(full_df[data_type], **params)
+        return features
     
-    def get_training_data(self, training_tickers, close_prices, features, target_labels):
+    def build_features_df(self, features, ticker=None):
+        # I was using this a lot so might as well make it a function
+        row = {}
+        for name in self.feature_configs:
+            series = features[name]
+            row[name] = series[ticker] if ticker else series
+        return pd.DataFrame(row).dropna()
+
+    def get_training_data(self, training_tickers, features, target_labels):
         """
         This function is almost a copy-paste of what I wrote for run_backtest_simulation.py
         in the first version (when everything was still just one function).
         It takes in all of the info we want and returns the correctly formatted features and label.
         """
-        training_list = []
+        frames = []
         for ticker in training_tickers:
-            ticker_data = {}
-
-            for feat in self.feature_configs.keys():
-                ticker_data[feat] = features[feat][ticker]
-            
-            ticker_data['target'] = target_labels[ticker]
-            training_stock_df = pd.DataFrame(ticker_data)
-            training_stock_df['ticker'] = ticker
-            training_list.append(training_stock_df)
-        
-        training_df = pd.concat(training_list).dropna()
-        X = training_df.drop(columns=['target', 'ticker'])
-        y = training_df['target']
+            ticker_df = self.build_features_df(features, ticker=ticker)
+            ticker_df['target'] = target_labels[ticker]
+            ticker_df['ticker'] = ticker
+            frames.append(ticker_df)
+ 
+        combined = pd.concat(frames).dropna()
+        X = combined.drop(columns=['target', 'ticker'])
+        y = combined['target']
         return X, y
+    
+    def build_labels(self, close_prices):
+        future_5day_avg = close_prices.shift(-1).rolling(window=5, min_periods=1).mean()
+        if self.is_regressor:
+            return (future_5day_avg - close_prices) / close_prices
+        else:
+            return (future_5day_avg > close_prices).astype(int)
+
     
     def run_simulation(self, target_ticker, training_tickers, pre_downloaded_df):
         """
@@ -68,39 +80,29 @@ class BacktestEngine:
 
         # Thanks to our previous functions, we can build our training models really easily:
         features = self.build_features(pre_downloaded_df)
-        future_price = close_prices.shift(self.target_shift)
-        future_5day_avg = close_prices.shift(-1).rolling(window=5, min_periods=1).mean()
-        
-        if self.is_regressor:
-            target_labels = (future_5day_avg - close_prices) / close_prices
-        else:
-            target_labels = (future_5day_avg > close_prices).astype(int)
+        target_labels = self.build_labels(close_prices)
 
-        X, y = self.get_training_data(training_tickers, close_prices, features, target_labels)
-        scaler = preprocessing.StandardScaler()
-        X_scaled = scaler.fit_transform(X)
+        # Train the model
+        X, y = self.get_training_data(training_tickers, features, target_labels)
+        X_scaled = self.scaler.fit_transform(X)
         self.model.fit(X_scaled, y)
 
         # Now we get the data that we'll be testing it against
         ticker_df = pre_downloaded_df.xs(target_ticker, level=1, axis=1)
-        ticker_close_prices = pre_downloaded_df['Close']
+        test_features = self.build_features(ticker_df)
+        test_df = self.build_features_df(test_features)
+        test_scaled = self.scaler.transform(test_df)
 
-        target_features = self.build_features(ticker_df)
-
-        # We need to flatten this list, because yfinance returns dataframes with a multi-index structure.
-        # We could probably solve this by building another function in stock_screener, but that's a problem for another day.
-        target_stock_dict = {}
-        for feat_name in self.feature_configs.keys():
-            target_stock_dict[feat_name] = target_features[feat_name]
-        target_stock_df = pd.DataFrame(target_stock_dict).dropna()
-
-        # We can now generate model predictions & flatten our data, similar to what we did with the regular backtest function
-        raw_predictions = self.model.predict(target_stock_df.values)
-        if self.is_regressor:
-            predictions = (raw_predictions > 0).astype(int)
+        if not self.is_regressor and hasattr(self.model, 'predict_proba'):
+            # Use predicted probability so we can apply a confidence threshold,
+            # which filters out low-conviction signals and reduces overtrading.
+            proba = self.model.predict_proba(test_scaled)[:, 1]
+            predictions = (proba >= self.confidence_threshold).astype(int)
         else:
-            predictions = raw_predictions
-        test_close_prices = ticker_close_prices[target_ticker].loc[target_stock_df.index].squeeze()
+            raw = self.model.predict(test_scaled)
+            predictions = (raw > 0).astype(int) if self.is_regressor else raw
+ 
+        test_close_prices = close_prices[target_ticker].loc[test_df.index].squeeze()
 
         # Now we use a loop to actually run the simulation
         starting_capital = 10000.0
@@ -109,7 +111,7 @@ class BacktestEngine:
         stock_owned = False
         days_held = 0
 
-        trade_log = [] # Tracks: {'type': 'BUY/SELL', 'price': X, 'date': Y}
+        trade_log = [] # {'type', 'price', 'date', ['return']}
         completed_trades = [] # Tracks percentage return of each closed trade
 
         for i in range(len(test_close_prices)):
@@ -119,51 +121,61 @@ class BacktestEngine:
 
             if stock_owned:
                 days_held += 1
+                buy_price = trade_log[-1]['price']
+                unrealized_loss = (current_price - buy_price) / buy_price
+                if unrealized_loss <= -self.stop_loss:  # 7% stop-loss
+                    # force sell
+                    prediction = 0
+                    days_held = 3  # bypass the min-hold check
 
             if prediction == 1 and not stock_owned:
                 shares_owned = capital / current_price
                 capital = 0
                 stock_owned = True
-                trade_log.append({'type': 'BUY', 'price': current_price, 'date': current_date})
                 days_held = 0
+                trade_log.append({'type': 'BUY', 'price': current_price, 'date': current_date})
+
             elif prediction == 0 and stock_owned and days_held >= 3:
                 capital = shares_owned * current_price
                 shares_owned = 0
                 stock_owned = False
-                buy_price = trade_log[-1]['price']
-                trade_return = ((current_price - buy_price) / buy_price) * 100
-                completed_trades.append(trade_return)
-                trade_log.append({'type': 'SELL', 'price': current_price, 'date': current_date, 'return': trade_return})
+                ret = ((current_price - trade_log[-1]['price']) / trade_log[-1]['price']) * 100
+                completed_trades.append(ret)
+                trade_log.append({'type': 'SELL', 'price': current_price, 'date': current_date, 'return': ret})
+
         
         # Clean up our open position at the end
         if stock_owned:
             final_price = test_close_prices.iloc[-1]
             capital = shares_owned * final_price
-            trade_return = ((final_price - trade_log[-1]['price']) / trade_log[-1]['price']) * 100
-            completed_trades.append(trade_return)
-            trade_log.append({'type': 'SELL_END', 'price': final_price, 'date': test_close_prices.index[-1], 'return': trade_return})
+            ret = ((final_price - trade_log[-1]['price']) / trade_log[-1]['price']) * 100
+            completed_trades.append(ret)
+            trade_log.append({'type': 'SELL_END', 'price': final_price, 'date': test_close_prices.index[-1], 'return': ret})
         
         # Now we can evaluate how well our simulation did:
         final_balance = capital
-        total_return = ((final_balance - starting_capital) / starting_capital) * 100
-        
-        bh_shares = starting_capital / test_close_prices.iloc[0]
-        bh_final_balance = bh_shares * test_close_prices.iloc[-1]
+        total_return = ((capital - starting_capital) / starting_capital) * 100
         bh_return = ((test_close_prices.iloc[-1] - test_close_prices.iloc[0]) / test_close_prices.iloc[0]) * 100
+        alpha = total_return - bh_return
+ 
+        total_trades = len(completed_trades)
+        winning_trades = sum(1 for r in completed_trades if r > 0)
+        win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
+
 
         # We calculate the returns for buy-and-hold so we can compare & calculate alpha
         total_trades = len(completed_trades)
         winning_trades = sum(1 for r in completed_trades if r > 0)
         win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0.0
 
-        print(f"Target: {target_ticker:<5} | Strategy: {total_return:+.2f}% | B&H: {bh_return:+.2f}% | Alpha: {total_return - bh_return:+.2f}% | Trades: {total_trades}")
+        print(f"Target: {target_ticker:<5} | Strategy: {total_return:+.2f}% | B&H: {bh_return:+.2f}% | Alpha: {alpha:+.2f}% | Trades: {total_trades}")
 
         self.last_strategy_return = total_return
-        self.last_bh_return = bh_return
-        self.last_alpha = total_return - bh_return
-        self.last_win_rate = win_rate
-        self.last_total_trades = total_trades
-        self.last_trade_log = pd.DataFrame(trade_log)
+        self.last_bh_return       = bh_return
+        self.last_alpha           = alpha
+        self.last_win_rate        = win_rate
+        self.last_total_trades    = total_trades
+        self.last_trade_log       = pd.DataFrame(trade_log)
 
 if __name__ == "__main__":
     # We set binary to True for random forest because it returns a categorical 0/1
