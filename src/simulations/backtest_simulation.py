@@ -70,7 +70,7 @@ class BacktestEngine:
             return (future_15day_avg > close_prices * 1.01).astype(int)
 
     
-    def run_simulation(self, target_ticker, training_tickers, pre_downloaded_df):
+    def run_simulation(self, target_ticker, training_tickers, pre_downloaded_df, benchmark_prices):
         """
         This function actually runs our simulation. Thanks to the class/OOP structure we have now,
         it just requires us to provide its target ticker and training tickers, assuming the
@@ -155,17 +155,23 @@ class BacktestEngine:
         
         # Now we can evaluate how well our simulation did:
         total_return = ((capital - starting_capital) / starting_capital) * 100
-        bh_return = ((test_close_prices.iloc[-1] - test_close_prices.iloc[0]) / test_close_prices.iloc[0]) * 100
-        alpha = total_return - bh_return
+
+        start_date = test_close_prices.index[0]
+        end_date   = test_close_prices.index[-1]
+        benchmark_start  = benchmark_prices.loc[start_date]
+        benchmark_end    = benchmark_prices.loc[end_date]
+        benchmark_return  = ((benchmark_end - benchmark_start) / benchmark_start) * 100
+
+        alpha = total_return - benchmark_return
  
         total_trades = len(completed_trades)
         winning_trades = sum(1 for r in completed_trades if r > 0)
         win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
 
-        print(f"Target: {target_ticker:<5} | Strategy: {total_return:+.2f}% | B&H: {bh_return:+.2f}% | Alpha: {alpha:+.2f}% | Trades: {total_trades}")
+        print(f"Target: {target_ticker:<5} | Strategy: {total_return:+.2f}% | Alpha: {alpha:+.2f}% | Trades: {total_trades}")
 
         self.last_strategy_return = total_return
-        self.last_bh_return       = bh_return
+        self.last_benchmark_return       = benchmark_return
         self.last_alpha           = alpha
         self.last_win_rate        = win_rate
         self.last_total_trades    = total_trades
@@ -208,9 +214,13 @@ if __name__ == "__main__":
         "SHOP", "AMZN", "CRM"
     ]
 
-    print(f"Downloading data for {len(train_pool)} assets from yfinance...")
-    master_df = stock_screener.fetch_screener_data(train_pool, period="2y", interval="1d")
+    benchmark = "SPY"
+
+    print(f"Downloading data for {len(train_pool)} assets & benchmark {benchmark} from yfinance...")
+    master_df = stock_screener.fetch_screener_data(train_pool + [benchmark], period="2y", interval="1d")
     print("Download Complete.")
+
+    benchmark_prices = master_df['Close'][benchmark]
 
     rf_classifier = ensemble.RandomForestClassifier(
         n_estimators=100,
@@ -229,21 +239,21 @@ if __name__ == "__main__":
     )
 
 
-    results = {k: [] for k in ('strategy', 'bh', 'alpha', 'win_rate', 'trades')}
+    results = {k: [] for k in ('strategy', 'benchmark', 'alpha', 'win_rate', 'trades')}
 
     for target in train_pool:
         oos_pool = [t for t in train_pool if t != target]
-        engine.run_simulation(target_ticker=target, training_tickers=oos_pool, pre_downloaded_df=master_df)
+        engine.run_simulation(target_ticker=target, training_tickers=oos_pool, pre_downloaded_df=master_df, benchmark_prices=benchmark_prices)
  
         results['strategy'].append(engine.last_strategy_return)
-        results['bh'].append(engine.last_bh_return)
+        results['benchmark'].append(engine.last_benchmark_return)
         results['alpha'].append(engine.last_alpha)
         results['win_rate'].append(engine.last_win_rate)
         results['trades'].append(engine.last_total_trades)
  
     print("\nSummary Statistics:")
     print(f"  Average Strategy Return   : {np.mean(results['strategy']):+.2f}%")
-    print(f"  Average Buy & Hold Return : {np.mean(results['bh']):+.2f}%")
+    print(f"  Average Benchmark Return : {np.mean(results['benchmark']):+.2f}%")
     print(f"  Mean Alpha                : {np.mean(results['alpha']):+.2f}%")
     print(f"  Average Win Rate          : {np.mean(results['win_rate']):.2f}%")
     print(f"  Average Trades Executed   : {np.mean(results['trades']):.1f}")
