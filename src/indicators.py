@@ -102,3 +102,45 @@ def calculate_rsi(df_close, window=14):
     rsi = 100 - (100 / (1 + rs))
 
     return rsi
+
+def calculate_adx(full_df, window=14):
+    """
+    ADX (Average Directional Index) measures trend strength on a 0-100 scale.
+    Interpretation:
+        < 20: choppy/no trend
+        20-40: moderate trend
+        > 40: strong trend
+ 
+    Unlike most indicators, ADX needs High, Low, and Close, so it expects
+    a DataFrame with those columns rather than just a close price series.
+    """
+    high = full_df['High']
+    low = full_df['Low']
+    close = full_df['Close']
+ 
+    # True Range: largest of the three possible price ranges on a given day
+    prev_close = close.shift(1)
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low  - prev_close).abs()
+    ], axis=1).max(axis=1)
+ 
+    # Directional movement: how much of today's range is new territory
+    plus_dm = high.diff()
+    minus_dm = -low.diff()
+ 
+    # Only keep positive DM when it exceeds the opposite direction
+    plus_dm = plus_dm.where((plus_dm > minus_dm) & (plus_dm > 0),  0.0)
+    minus_dm = minus_dm.where((minus_dm > plus_dm) & (minus_dm > 0), 0.0)
+ 
+    # Smooth all three with EWM, same as in RSI calculation
+    atr = tr.ewm(com=window - 1, adjust=False).mean()
+    plus_di = 100 * plus_dm.ewm(com=window - 1,  adjust=False).mean() / atr
+    minus_di = 100 * minus_dm.ewm(com=window - 1, adjust=False).mean() / atr
+ 
+    # ADX is the smoothed ratio of how different the two DI lines are
+    dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di)
+    adx = dx.ewm(com=window - 1, adjust=False).mean()
+ 
+    return adx
