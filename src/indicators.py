@@ -13,6 +13,11 @@ Note: format of calculation functions used in backtest_simulation must have:
 def calculate_sma(df_close, window="5d"):
     return df_close.rolling(window=window).mean()
 
+def calculate_sma_position(df_close, window=50):
+    sma = df_close.rolling(window=window).mean()
+    return (df_close - sma) / sma
+
+
 def calculate_sma_crossover(df_close, fast_window=5, slow_window=20, binary=True):
     """
     It probably makes more sense for us to see the relationship 

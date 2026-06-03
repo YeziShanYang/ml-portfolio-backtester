@@ -4,7 +4,7 @@ from src import stock_screener, indicators
 from sklearn import ensemble, preprocessing
 
 class BacktestEngine:
-    def __init__(self, model, feature_configs, target_shift=-7, confidence_threshold=0.60, stop_loss=0.07):
+    def __init__(self, model, feature_configs, target_shift=-7, confidence_threshold=0.60, stop_loss=0.10, min_hold_days=7):
         """
         Here, 'model' is the kind of scikit-learn model we want to use.
         Since different types of models work differently, we would like to encompass
@@ -19,6 +19,7 @@ class BacktestEngine:
         self.target_shift = target_shift
         self.confidence_threshold = confidence_threshold
         self.stop_loss = stop_loss
+        self.min_hold_days = min_hold_days
         self.scaler = preprocessing.StandardScaler()
         self.is_regressor = "Classifier" not in type(model).__name__
     
@@ -62,11 +63,11 @@ class BacktestEngine:
         return X, y
     
     def build_labels(self, close_prices):
-        future_5day_avg = close_prices.shift(-1).rolling(window=5, min_periods=1).mean()
+        future_15day_avg = close_prices.shift(-1).rolling(window=15, min_periods=1).mean()
         if self.is_regressor:
-            return (future_5day_avg - close_prices) / close_prices
+            return (future_15day_avg - close_prices) / close_prices
         else:
-            return (future_5day_avg > close_prices).astype(int)
+            return (future_15day_avg > close_prices * 1.01).astype(int)
 
     
     def run_simulation(self, target_ticker, training_tickers, pre_downloaded_df):
@@ -126,7 +127,7 @@ class BacktestEngine:
                 if unrealized_loss <= -self.stop_loss:  # 7% stop-loss
                     # force sell
                     prediction = 0
-                    days_held = 3  # bypass the min-hold check
+                    days_held = self.min_hold_days  # bypass the min-hold check
 
             if prediction == 1 and not stock_owned:
                 shares_owned = capital / current_price
@@ -135,7 +136,7 @@ class BacktestEngine:
                 days_held = 0
                 trade_log.append({'type': 'BUY', 'price': current_price, 'date': current_date})
 
-            elif prediction == 0 and stock_owned and days_held >= 3:
+            elif prediction == 0 and stock_owned and days_held >= self.min_hold_days:
                 capital = shares_owned * current_price
                 shares_owned = 0
                 stock_owned = False
@@ -153,7 +154,6 @@ class BacktestEngine:
             trade_log.append({'type': 'SELL_END', 'price': final_price, 'date': test_close_prices.index[-1], 'return': ret})
         
         # Now we can evaluate how well our simulation did:
-        final_balance = capital
         total_return = ((capital - starting_capital) / starting_capital) * 100
         bh_return = ((test_close_prices.iloc[-1] - test_close_prices.iloc[0]) / test_close_prices.iloc[0]) * 100
         alpha = total_return - bh_return
@@ -161,12 +161,6 @@ class BacktestEngine:
         total_trades = len(completed_trades)
         winning_trades = sum(1 for r in completed_trades if r > 0)
         win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
-
-
-        # We calculate the returns for buy-and-hold so we can compare & calculate alpha
-        total_trades = len(completed_trades)
-        winning_trades = sum(1 for r in completed_trades if r > 0)
-        win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0.0
 
         print(f"Target: {target_ticker:<5} | Strategy: {total_return:+.2f}% | B&H: {bh_return:+.2f}% | Alpha: {alpha:+.2f}% | Trades: {total_trades}")
 
@@ -183,6 +177,10 @@ if __name__ == "__main__":
         'sma_trend_regime': {
             'func': indicators.calculate_sma_crossover, 
             'params': {'fast_window': 5, 'slow_window': 20, 'binary': True}
+        },
+        'sma_position_50': {
+            'func':   indicators.calculate_sma_position,
+            'params': {'window': 50},
         },
         'rsi': {
             'func': indicators.calculate_rsi,
@@ -211,36 +209,45 @@ if __name__ == "__main__":
     ]
 
     print(f"Downloading data for {len(train_pool)} assets from yfinance...")
-    master_df = stock_screener.fetch_screener_data(train_pool, period="1y", interval="1d")
+    master_df = stock_screener.fetch_screener_data(train_pool, period="2y", interval="1d")
     print("Download Complete.")
 
-    rf_classifier = ensemble.RandomForestClassifier(n_estimators=100, random_state=42, min_samples_split=10)
-    engine_rf = BacktestEngine(model=rf_classifier, feature_configs=features_rf)
+    rf_classifier = ensemble.RandomForestClassifier(
+        n_estimators=100,
+        random_state=42,
+        min_samples_split=10,
+        max_features='sqrt',
+        max_depth=10
+    )
 
-    all_strategy_returns = []
-    all_bh_returns = []
-    all_alphas = []
-    all_win_rates = []
-    all_trade_counts = []
+    engine = BacktestEngine(
+        model=rf_classifier,
+        feature_configs=features_rf,
+        confidence_threshold=0.60,
+        stop_loss=0.10,
+        min_hold_days=7
+    )
 
-    for test_target in train_pool:
-        oos_training_pool = [ticker for ticker in train_pool if ticker != test_target]
 
-        engine_rf.run_simulation(target_ticker=test_target, training_tickers=oos_training_pool, pre_downloaded_df=master_df)
-        
-        # Cache stats on the fly
-        all_strategy_returns.append(engine_rf.last_strategy_return)
-        all_bh_returns.append(engine_rf.last_bh_return)
-        all_alphas.append(engine_rf.last_alpha)
-        all_win_rates.append(engine_rf.last_win_rate)
-        all_trade_counts.append(engine_rf.last_total_trades)
+    results = {k: [] for k in ('strategy', 'bh', 'alpha', 'win_rate', 'trades')}
 
-    print("Summary Statistics:")
-    print(f"Average Strategy Return   : {np.mean(all_strategy_returns):+.2f}%")
-    print(f"Average Buy & Hold Return : {np.mean(all_bh_returns):+.2f}%")
-    print(f"Mean Alpha                : {np.mean(all_alphas):+.2f}%")
-    print(f"Average Strategy Win Rate : {np.mean(all_win_rates):.2f}%")
-    print(f"Average Trades Executed   : {np.mean(all_trade_counts):.1f}")
+    for target in train_pool:
+        oos_pool = [t for t in train_pool if t != target]
+        engine.run_simulation(target_ticker=target, training_tickers=oos_pool, pre_downloaded_df=master_df)
+ 
+        results['strategy'].append(engine.last_strategy_return)
+        results['bh'].append(engine.last_bh_return)
+        results['alpha'].append(engine.last_alpha)
+        results['win_rate'].append(engine.last_win_rate)
+        results['trades'].append(engine.last_total_trades)
+ 
+    print("\nSummary Statistics:")
+    print(f"  Average Strategy Return   : {np.mean(results['strategy']):+.2f}%")
+    print(f"  Average Buy & Hold Return : {np.mean(results['bh']):+.2f}%")
+    print(f"  Mean Alpha                : {np.mean(results['alpha']):+.2f}%")
+    print(f"  Average Win Rate          : {np.mean(results['win_rate']):.2f}%")
+    print(f"  Average Trades Executed   : {np.mean(results['trades']):.1f}")
+
 
 
 
