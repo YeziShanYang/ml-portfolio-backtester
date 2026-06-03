@@ -4,7 +4,7 @@ from src import stock_screener, indicators
 from sklearn import ensemble, preprocessing
 
 class BacktestEngine:
-    def __init__(self, model, feature_configs, target_shift=-7, confidence_threshold=0.60, stop_loss=0.10, min_hold_days=7):
+    def __init__(self, model, feature_configs, target_shift=-7, confidence_threshold=0.60, stop_loss=0.10, min_hold_days=7, adx_threshold=20):
         """
         Here, 'model' is the kind of scikit-learn model we want to use.
         Since different types of models work differently, we would like to encompass
@@ -20,6 +20,7 @@ class BacktestEngine:
         self.confidence_threshold = confidence_threshold
         self.stop_loss = stop_loss
         self.min_hold_days = min_hold_days
+        self.adx_threshold = adx_threshold
         self.scaler = preprocessing.StandardScaler()
         self.is_regressor = "Classifier" not in type(model).__name__
     
@@ -105,6 +106,12 @@ class BacktestEngine:
  
         test_close_prices = close_prices[target_ticker].loc[test_df.index].squeeze()
 
+        # Calculate ADX for the target ticker using High, Low, Close.
+        # On days where ADX is below the threshold the market is choppy,
+        # so we suppress buy signals to avoid low-quality entries.
+        adx = indicators.calculate_adx(ticker_df).reindex(test_df.index)
+        adx_filter = adx >= self.adx_threshold
+
         # Now we use a loop to actually run the simulation
         starting_capital = 10000.0
         capital = starting_capital
@@ -128,6 +135,9 @@ class BacktestEngine:
                     # force sell
                     prediction = 0
                     days_held = self.min_hold_days  # bypass the min-hold check
+
+            if prediction == 1 and not adx_filter.iloc[i]:
+                prediction = 0
 
             if prediction == 1 and not stock_owned:
                 shares_owned = capital / current_price
@@ -235,7 +245,8 @@ if __name__ == "__main__":
         feature_configs=features_rf,
         confidence_threshold=0.60,
         stop_loss=0.10,
-        min_hold_days=7
+        min_hold_days=7,
+        adx_threshold=20
     )
 
 
