@@ -1,3 +1,16 @@
+June 3:
+From looking at my code and what I see with the stocks I'm looking at overall, the past year was very bullish for these stocks,
+and the prices rose, which makes B&H simply really hard to beat. So, I decided to change it so that the benchmark we're looking at
+is now a stock; right now I'm looking at either making it SPY or QQQ. From the data now, I get positive returns on most stocks;
+however, there are. few stocks, like CRM and WIX, that our strategy does quite poorly on. I tried implementing adx (average
+directional index), which helped bring our return to +30.49% and winrate to +62.24%! However, the alpha (now calculated in
+comparison to our benchmark stock) was still not great. I've also realized something: In an ideal simulation, on each day the 
+simulation takes a look and allocates its money to a stock. In this case, my average returns don't really mean anything 
+because it's not like all of these are going on simultaneously. In the real world, sometimes the model will recognize that 
+the stock just isn't good and won't buy it, and spend money on other things in its portfolio instead. Trying to get a stock 
+that was going down to give positive returns every time just isn't realistic. So, tomorrow I'll try to make a change to my model to 
+make it take in every single one of these stocks as potential options, and decide which position is best to hold.
+
 June 2:
 There were a few bugs in my code that I caught today. All in all, these changes actually ended up tanking my alpha as well
 as my returns. Turns out I was getting better results with incorrect training, but it's good that I caught it now, so I
