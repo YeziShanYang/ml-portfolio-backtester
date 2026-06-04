@@ -1,3 +1,10 @@
+June 4:
+I've modified the trading code from backtest_single for trading a portfolio of stocks, so my data should be more realistic
+now. The data shows that I have a 58.62% winrate with 29 trades over 3 years, and that I have a return of +51.60%,
+generating an alpha of +33.22% compared to my benchmark SPY. However, I'm still cautiously optimistic still because I know 
+for a fact that some of these stocks generated like 300% buy & hold. I would like to start trying to optimize my numbers,
+such as the intervals for my moving averages, but I've heard about the dangers of overfitting, so I'll do some more research.
+
 June 3:
 From looking at my code and what I see with the stocks I'm looking at overall, the past year was very bullish for these stocks,
 and the prices rose, which makes B&H simply really hard to beat. So, I decided to change it so that the benchmark we're looking at
