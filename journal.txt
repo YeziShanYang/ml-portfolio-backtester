@@ -1,3 +1,23 @@
+June 6:
+I wanted to start with optimization today, but there was something that came up first. Running the data again yields returns 
+of -14.80%, much less than yesterday's results. This means that our model is very sensitive to small changes in the training
+data, so overfitting is much more of a concern, because small shifts can influence our results by a lot.
+With this in mind, I'm probably going to test changes for the next few days and see if there are consistent windows.
+From my analysis of my code, there are a few different ways we can look to optimize our data:
+  1. When we build labels, we use the future 15-day average
+  2. sma crossover slow & fast windows, other feature parameters
+  3. Confidence threshold, other engine configs
+To reduce the risk of overfitting, I will go with pretty big increments for each:
+  (1) window=15 -> -14.80%, window=10 -> +77.10%, window=5 -> +33.36%, window=20 -> +9.87%
+  (2) confidence_threshold=0.60 -> -14.80%, 0.55 -> -14.80%, 0.65% -> -14.80%, 0.70 -> -1.53%, 0.75 -> -1.53%
+  (3) stop_loss=0.10 -> -14.80%, 0.05 -> -1.05%, 0.15 -> -1.95%, 0.20 -> -4.42%, 0.25 -> +1.68%
+  (4) min_hold_days=7 -> -14.80%, 14 -> -31.33%, 21 -> -25.58%, 4 -> +73.38%, 2 -> +18.08%
+  (5) adx_threshold=20 -> -14.80%, 15 -> -55.12%, 25 -> -35.19%
+  (6) sma_trend_regime=5/20 -> -14.80%, 10/30 -> +11.23%, 20/50 -> +12.04%
+  (7) sma_position=50 -> -14.80%, 25 -> +174.26%, 75=+1.37%, 15 -> -3.41%
+  (8) roc=10 -> -14.80%, 5 -> +39.36%, 2 -> +0.29%, 15 -> -10.38%
+  (9) volume=5/20 -> -14.80%, 10/30 -> -9.72%, 20/50 -> -8.90%, None -> +9.99%
+
 June 4:
 I've modified the trading code from backtest_single for trading a portfolio of stocks, so my data should be more realistic
 now. The data shows that I have a 58.62% winrate with 29 trades over 3 years, and that I have a return of +51.60%,

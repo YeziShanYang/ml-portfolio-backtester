@@ -39,8 +39,8 @@ class PortfolioBacktestEngine:
     
     def build_labels(self, close_prices):
         # Same as v1
-        future_15day_avg = close_prices.shift(-1).rolling(window=15, min_periods=1).mean()
-        return (future_15day_avg > close_prices * 1.01).astype(int)
+        future_day_avg = close_prices.shift(-1).rolling(window=15, min_periods=1).mean()
+        return (future_day_avg > close_prices * 1.01).astype(int)
 
     def split_data(self, full_df):
         """
@@ -236,7 +236,7 @@ if __name__ == "__main__":
             'func': indicators.calculate_sma_crossover,
             'params': {'fast_window': 5, 'slow_window': 20, 'binary': True},
         },
-        'sma_position_50': {
+        'sma_position': {
             'func': indicators.calculate_sma_position,
             'params': {'window': 50},
         },
