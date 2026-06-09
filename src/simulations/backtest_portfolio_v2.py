@@ -6,7 +6,7 @@ from sklearn import ensemble, preprocessing
 class PortfolioBacktestEngine:
     def __init__(self, model, feature_configs, confidence_threshold=0.60, 
                  stop_loss=0.10, min_hold_days=7, adx_threshold=20, 
-                 training_years=2, testing_years=1):
+                 training_years=2, testing_years=1, offset_years=0):
         # Same as v1 but we don't need to check for which model 
         # it is since we're going to be focusing on RFC
         self.model = model
@@ -17,6 +17,7 @@ class PortfolioBacktestEngine:
         self.adx_threshold = adx_threshold
         self.training_years = training_years
         self.testing_years = testing_years
+        self.offset_years = offset_years
         self.scaler = preprocessing.StandardScaler()
     
     def build_features(self, full_df):
@@ -48,13 +49,13 @@ class PortfolioBacktestEngine:
         training_years and testing_years, with no overlap between them.
         Returns (train_df, test_df) as separate DataFrames.
         """
-        today      = full_df.index.max()
+        today      = full_df.index.max() - pd.DateOffset(years=self.offset_years)
         test_start = today - pd.DateOffset(years=self.testing_years)
         train_end  = test_start
         train_start = train_end - pd.DateOffset(years=self.training_years)
  
         train_df = full_df.loc[train_start:train_end]
-        test_df  = full_df.loc[test_start:]
+        test_df  = full_df.loc[test_start:today]
         return train_df, test_df
     
     def run_simulation(self, ticker_pool, pre_downloaded_df, benchmark_prices):
@@ -267,17 +268,7 @@ if __name__ == "__main__":
     ]
  
     benchmark = "SPY"
- 
-    total_years = 3
-    print(f"Downloading {total_years}y of data for {len(ticker_pool)} tickers + {benchmark}...")
-    master_df = stock_screener.fetch_screener_data(
-        ticker_pool + [benchmark], period=f"{total_years}y", interval="1d"
-    )
-    print("Download Complete.")
- 
-    benchmark_prices = master_df['Close'][benchmark]
-    benchmark_prices.name = benchmark
- 
+
     rf_classifier = ensemble.RandomForestClassifier(
         n_estimators=100,
         random_state=42,
@@ -294,8 +285,19 @@ if __name__ == "__main__":
         min_hold_days=7,
         adx_threshold=20,
         training_years=2,
-        testing_years=1
+        testing_years=1,
+        offset_years=0
     )
+ 
+    total_years = engine.training_years + engine.testing_years + engine.offset_years
+    print(f"Downloading {total_years}y of data for {len(ticker_pool)} tickers + {benchmark}...")
+    master_df = stock_screener.fetch_screener_data(
+        ticker_pool + [benchmark], period=f"{total_years}y", interval="1d"
+    )
+    print("Download Complete.")
+ 
+    benchmark_prices = master_df['Close'][benchmark]
+    benchmark_prices.name = benchmark
  
     engine.run_simulation(
         ticker_pool=ticker_pool,
