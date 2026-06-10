@@ -1,3 +1,32 @@
+June 9:
+Over the past couple of days, I've run the backtesting simulation using a few different parameters. As it turns out, the 
+day-by-day differences are quite small, with the pct returns going from -14.80% to -16.90% and -24.25% today. This isn't 
+as large as I would have thought, but it's still quite substantial. Given that these values are likely to stay around the 
+same, I want to see what modifying my feature values would yield if the simulation was run at a different time in the past.
+
+Update: After offsetting by 1, 2, and 3 years, I achieved returns of +62.79%, +24.78%, and +29.00%. Not sure what I'm going
+to do with the actual numbers right now, but offsetting by 2-3 years seems to be a good point for me to start testing features 
+to see if the same patterns hold true:
+  (1) window=15 -> +24.78%, 10 -> -17.77%, 5 -> +3.45%, 20 -> +40.91%
+  (2) confidence_threshold=0.60 -> +24.78%, 0.55 -> +24.78, 0.65 -> +24.78%, 0.70 -> +24.78, 0.75 -> +43.36%
+  (3) stop_loss=0.10 -> +24.78%, 0.05 -> +41.55%, 0.15 -> +16.24%, 0 -> +66.99%, 0.20 -> +44.80%
+  (4) min_hold_days=7 -> +24.78%, 14 -> +36.58%, 21 -> +8.22%, 4 -> +15.48%, 2 -> +49.79%
+  (5) sma_trend_regime=5/20 -> +24.78%, 10/30 -> +93.64%, 20/50 -> +74.82%
+  (6) sma_position=50 -> +24.78%, 25 -> +34.52%, 75 -> +10.14%, 15 -> +145.65%
+  (7) roc=10 -> 24.78%, 5 -> +58.80%, 2 -> +54.35%, 15 -> +57.59%
+  (8) volume 5/20 -> 24.78%, 10/30 -> +23.83%, 20/50 -> +25.97%, None -> +25.66%
+
+So, based the analysis of these two days, we can conclude that:
+  1. The feature tracking volume acceleration isn't really affecting our final numbers, and the differences are small enough
+     to just ignore.
+  2. Setting a higher confidence threshold does tend to increase our final returns.
+  3. Our stop loss should either be lower or higher. Lower isn't intuitively correct since that just means it sells immediately
+     once it experiences any kind of significant loss, so I'm inclined to make it higher.
+  4. I hypothesized that min_hold_days should be next to window, but it seems like setting it lower is better.
+  5. For the sma trend lines, having it be larger (10/30 or 20/50) seems to be a lot better
+  6. I got wildly different results for window and sma_position, so that warrants further testing.
+  7. I'm setting roc lower, probably to around 5.
+
 June 6:
 I wanted to start with optimization today, but there was something that came up first. Running the data again yields returns 
 of -14.80%, much less than yesterday's results. This means that our model is very sensitive to small changes in the training

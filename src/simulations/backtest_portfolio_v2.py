@@ -286,7 +286,7 @@ if __name__ == "__main__":
         adx_threshold=20,
         training_years=2,
         testing_years=1,
-        offset_years=0
+        offset_years=2
     )
  
     total_years = engine.training_years + engine.testing_years + engine.offset_years
@@ -307,6 +307,3 @@ if __name__ == "__main__":
  
     print("\nTrade Log:")
     print(engine.last_trade_log.to_string(index=False))
-
-
-
