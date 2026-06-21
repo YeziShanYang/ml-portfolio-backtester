@@ -1,3 +1,22 @@
+June 21:
+After taking a bit of a break, I've decided on the following changes to the model:
+  (1) window is pretty inconsistent so I'll leave it at 15 for now and mess with it individually.
+  (2) confidence_threshold being higher seems to improve the model, so I'll set it at 0.75.
+  (3) stop_loss should be a bit higher, at around 0.20-0.25. I'll err on the higher side with 0.25.
+  (4) min_hold_days seems to be better if it's not artificially constraining the model so I'll set it to 2.
+  (5) sma_trend_regime should be set at around 10/30.
+  (6) sma_position should be a bit lower, so I'll look to set it around 25.
+  (7) roc should be 5, optimal for both tests
+  (8) volume doesn't seem to matter so I'll just get rid of it.
+
+After implementation we have a strategy return of +79.66% for training from 2021-2023 (2y) and testing on 2023-2024 (1y).
+When offset by 0 years it's +18.22%, and when offset by 4 years it's -49.85%. This means that my model is fairly inconsistent.
+Interestingly enough, though, the model's win rate was still 58.57% for the latter. After analyzing the data, I'm pretty sure
+that we can conclude that my intuition for having a higher stop loss was incorrect, and there were a lot of -10% losses.
+So, I'll combat this by making it 0.05 (either lower or higher from a previous day's results, and higher was incorrect)
+Moreover, this is probably linked to the fact that tech stocks were bullish that year overall, so it just should've sat in cash
+for a greater percentage of the time.
+
 June 9:
 Over the past couple of days, I've run the backtesting simulation using a few different parameters. As it turns out, the 
 day-by-day differences are quite small, with the pct returns going from -14.80% to -16.90% and -24.25% today. This isn't 

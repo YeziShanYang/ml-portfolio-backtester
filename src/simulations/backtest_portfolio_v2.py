@@ -235,11 +235,11 @@ if __name__ == "__main__":
     features_rf = {
         'sma_trend_regime': {
             'func': indicators.calculate_sma_crossover,
-            'params': {'fast_window': 5, 'slow_window': 20, 'binary': True},
+            'params': {'fast_window': 10, 'slow_window': 30, 'binary': True},
         },
         'sma_position': {
             'func': indicators.calculate_sma_position,
-            'params': {'window': 50},
+            'params': {'window': 25},
         },
         'rsi': {
             'func': indicators.calculate_rsi,
@@ -251,13 +251,8 @@ if __name__ == "__main__":
         },
         'price_roc': {
             'func': indicators.calculate_roc,
-            'params': {'window': 10},
-        },
-        'volume_acceleration': {
-            'func': indicators.calculate_volume_spread,
-            'params': {'fast_window': 5, 'slow_window': 20},
-            'data_type': 'Volume',
-        },
+            'params': {'window': 5}
+        }
     }
  
     ticker_pool = [
@@ -280,13 +275,13 @@ if __name__ == "__main__":
     engine = PortfolioBacktestEngine(
         model=rf_classifier,
         feature_configs=features_rf,
-        confidence_threshold=0.60,
-        stop_loss=0.10,
-        min_hold_days=7,
+        confidence_threshold=0.75,
+        stop_loss=0.05,
+        min_hold_days=2,
         adx_threshold=20,
         training_years=2,
         testing_years=1,
-        offset_years=2
+        offset_years=0
     )
  
     total_years = engine.training_years + engine.testing_years + engine.offset_years
