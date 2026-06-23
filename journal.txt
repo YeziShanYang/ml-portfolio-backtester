@@ -1,3 +1,10 @@
+June 22:
+I've created graphs to help visualize our portfolios. It seems to me that our current trading strategy amplifies the 
+overall trend of the market, which is a good insight to have. Just from looking, our benchmark, the S&P 500, dropped in
+April of this year because of the tariffs and volatile political system in the US, and that caused our model to lose out.
+I think a good way to help combat this is to increase the confidence threshold required to buy a stock when the market is
+in a downtrend. I just need to implement it now.
+
 June 21:
 After taking a bit of a break, I've decided on the following changes to the model:
   (1) window is pretty inconsistent so I'll leave it at 15 for now and mess with it individually.
