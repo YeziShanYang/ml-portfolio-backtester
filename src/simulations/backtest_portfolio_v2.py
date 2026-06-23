@@ -6,7 +6,8 @@ from sklearn import ensemble, preprocessing
 class PortfolioBacktestEngine:
     def __init__(self, model, feature_configs, confidence_threshold=0.60, 
                  stop_loss=0.10, min_hold_days=7, adx_threshold=20, 
-                 training_years=2, testing_years=1, offset_years=0):
+                 training_years=2, testing_years=1, offset_years=0,
+                 bear_confidence_threshold=0.75):
         # Same as v1 but we don't need to check for which model 
         # it is since we're going to be focusing on RFC
         self.model = model
@@ -18,6 +19,7 @@ class PortfolioBacktestEngine:
         self.training_years = training_years
         self.testing_years = testing_years
         self.offset_years = offset_years
+        self.bear_confidence_threshold = bear_confidence_threshold
         self.scaler = preprocessing.StandardScaler()
     
     def build_features(self, full_df):
@@ -141,6 +143,9 @@ class PortfolioBacktestEngine:
         completed_trades = []
         portfolio_values = []
 
+        spy_sma200 = benchmark_prices.rolling(window=200).mean()
+        in_bull_series = benchmark_prices > spy_sma200
+
         for i in range(len(common_index)):
             date = common_index[i]
  
@@ -162,8 +167,10 @@ class PortfolioBacktestEngine:
                     days_held = 0
  
             # Score today's candidates: must clear ADX filter and confidence threshold
+            in_bull = in_bull_series.loc[date] if date in in_bull_series.index else True
+            threshold = self.confidence_threshold if in_bull else self.bear_confidence_threshold
             today_proba = proba_df.loc[date].where(adx_df.loc[date])
-            candidates = today_proba[today_proba >= self.confidence_threshold]
+            candidates = today_proba[today_proba >= threshold]
  
             if len(candidates) > 0:
                 best_ticker = candidates.idxmax()
