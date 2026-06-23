@@ -139,6 +139,7 @@ class PortfolioBacktestEngine:
  
         trade_log = []
         completed_trades = []
+        portfolio_values = []
 
         for i in range(len(common_index)):
             date = common_index[i]
@@ -194,6 +195,8 @@ class PortfolioBacktestEngine:
                     days_held = 0
                     trade_log.append({'type': 'BUY', 'ticker': best_ticker,
                                       'price': buy_price, 'date': date})
+            current_value = shares_owned * test_close.loc[date, held_ticker] if held_ticker else capital
+            portfolio_values.append(current_value)
  
         # Close any open position at end of window
         if held_ticker is not None:
@@ -205,6 +208,7 @@ class PortfolioBacktestEngine:
                                'price': final_price, 'date': common_index[-1], 'return': ret})
  
         total_return = ((capital - starting_capital) / starting_capital) * 100
+        self.last_equity_curve = pd.Series(portfolio_values, index=common_index)
  
         bm_start = benchmark_prices.loc[common_index[0]]
         bm_end = benchmark_prices.loc[common_index[-1]]
