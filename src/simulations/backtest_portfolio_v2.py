@@ -60,6 +60,28 @@ class PortfolioBacktestEngine:
         test_df  = full_df.loc[test_start:today]
         return train_df, test_df
     
+    def get_market_regime(self, benchmark_prices, date):
+        # Returns 'bull', 'bear', or 'neutral' based on SPY
+
+        if date not in benchmark_prices.index:
+            return 'bull'
+        
+        sma50 = benchmark_prices.rolling(50).mean()
+        sma200 = benchmark_prices.rolling(200).mean()
+        roc20 = benchmark_prices.pct_change(20)  # 1-month momentum
+
+        price = benchmark_prices.loc[date]
+        s50 = sma50.loc[date]
+        s200 = sma200.loc[date]
+        r20 = roc20.loc[date]
+
+        if price > s50 and s50 > s200 and r20 > 0:
+            return 'bull'
+        elif price < s200 and r20 < -0.05:
+            return 'bear'
+        else:
+            return 'neutral'
+    
     def run_simulation(self, ticker_pool, pre_downloaded_df, benchmark_prices):
         """
         Runs a portfolio simulation across the entire ticker pool.
@@ -165,17 +187,29 @@ class PortfolioBacktestEngine:
                                       'price': current_price, 'date': date, 'return': ret})
                     held_ticker = None
                     days_held = 0
- 
+
             # Score today's candidates: must clear ADX filter and confidence threshold
-            in_bull = in_bull_series.loc[date] if date in in_bull_series.index else True
-            threshold = self.confidence_threshold if in_bull else self.bear_confidence_threshold
-            today_proba = proba_df.loc[date].where(adx_df.loc[date])
-            candidates = today_proba[today_proba >= threshold]
+            regime = self.get_market_regime(benchmark_prices, date)
+            if regime == 'bear':
+                if held_ticker is not None and days_held >= self.min_hold_days:
+                    sell_price = test_close.loc[date, held_ticker]
+                    capital = shares_owned * sell_price
+                    shares_owned = 0.0
+                    ret = ((sell_price - trade_log[-1]['price']) / trade_log[-1]['price']) * 100
+                    completed_trades.append(ret)
+                    trade_log.append({'type': 'SELL_BEAR', 'ticker': held_ticker,
+                                      'price': sell_price, 'date': date, 'return': ret})
+                    held_ticker = None
+                    days_held = 0
  
-            if len(candidates) > 0:
-                best_ticker = candidates.idxmax()
-            else:
-                best_ticker = None
+                current_value = shares_owned * test_close.loc[date, held_ticker] if held_ticker else capital
+                portfolio_values.append(current_value)
+                continue
+
+            threshold = self.confidence_threshold if regime == 'bull' else self.bear_confidence_threshold
+            today_proba = proba_df.loc[date].where(adx_df.loc[date])
+            candidates  = today_proba[today_proba >= threshold]
+            best_ticker = candidates.idxmax() if len(candidates) > 0 else None
  
             # Only act if min_hold_days met or we're not holding anything
             can_switch = (held_ticker is None) or (days_held >= self.min_hold_days)
