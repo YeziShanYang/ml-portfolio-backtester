@@ -1,3 +1,14 @@
+June 24:
+Alright so I may have accidentally figured out why my returns seemed so low. Basically, this entire time I was testing my model
+on just tech stocks; the problem was, the trend that I was noticing was that it very very closely resembled the benchmark stock
+that I was using, the S&P 500. The problem was probably that my gains and losses were very amplified since they were all based
+on how well the tech market as a whole was going. I also should've been using QQQ as my benchmark, since it's more tech-heavy.
+So, I drew up a list of 15 more stocks (diversified) and voila I have 60% returns for some reason lol
+As an analysis of my results, I plotted my model trained and tested on tech_pool_general against SPY, and found
++257.14% returns over 5 years with 5 years of training and 0 offset. However, what I think is interesting is that most of the 
+growth in portfolio value actually happened over the last two years, and there wasn't much going on (it was around even) during
+the first three years.
+
 June 22:
 I've created graphs to help visualize our portfolios. It seems to me that our current trading strategy amplifies the 
 overall trend of the market, which is a good insight to have. Just from looking, our benchmark, the S&P 500, dropped in
