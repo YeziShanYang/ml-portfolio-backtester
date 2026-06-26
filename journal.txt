@@ -1,25 +1,12 @@
 June 26:
-I was kind of suspicious of my good results from last time, so I decided to look into it. Basically, all of my stocks went up
-over this time period, making it kind of hard for us to not have profit. So, I went ahead and made a few more stock pools,
-with one that's actually balanced this time; it looks like it did pretty well!
+I was kind of suspicious of my good results from last time, so I decided to look into it. Basically, all of my stocks went up over this time period, making it kind of hard for us to not have profit. So, I went ahead and made a few more stock pools, with one that's actually balanced this time; it looks like it did pretty well!
 
 June 24:
-Alright so I may have accidentally figured out why my returns seemed so low. Basically, this entire time I was testing my model
-on just tech stocks; the problem was, the trend that I was noticing was that it very very closely resembled the benchmark stock
-that I was using, the S&P 500. The problem was probably that my gains and losses were very amplified since they were all based
-on how well the tech market as a whole was going. I also should've been using QQQ as my benchmark, since it's more tech-heavy.
-So, I drew up a list of 15 more stocks (diversified) and voila I have 60% returns for some reason lol
-As an analysis of my results, I plotted my model trained and tested on tech_pool_general against SPY, and found
-+257.14% returns over 5 years with 5 years of training and 0 offset. However, what I think is interesting is that most of the 
-growth in portfolio value actually happened over the last two years, and there wasn't much going on (it was around even) during
-the first three years.
+Alright so I may have accidentally figured out why my returns seemed so low. Basically, this entire time I was testing my model on just tech stocks; the problem was, the trend that I was noticing was that it very very closely resembled the benchmark stock that I was using, the S&P 500. The problem was probably that my gains and losses were very amplified since they were all based on how well the tech market as a whole was going. I also should've been using QQQ as my benchmark, since it's more tech-heavy. So, I drew up a list of 15 more stocks (diversified) and voila I have 60% returns for some reason lol
+As an analysis of my results, I plotted my model trained and tested on tech_pool_general against SPY, and found +257.14% returns over 5 years with 5 years of training and 0 offset. However, what I think is interesting is that most of the  growth in portfolio value actually happened over the last two years, and there wasn't much going on (it was around even) during the first three years.
 
 June 22:
-I've created graphs to help visualize our portfolios. It seems to me that our current trading strategy amplifies the 
-overall trend of the market, which is a good insight to have. Just from looking, our benchmark, the S&P 500, dropped in
-April of this year because of the tariffs and volatile political system in the US, and that caused our model to lose out.
-I think a good way to help combat this is to increase the confidence threshold required to buy a stock when the market is
-in a downtrend. I just need to implement it now.
+I've created graphs to help visualize our portfolios. It seems to me that our current trading strategy amplifies the overall trend of the market, which is a good insight to have. Just from looking, our benchmark, the S&P 500, dropped in April of this year because of the tariffs and volatile political system in the US, and that caused our model to lose out. I think a good way to help combat this is to increase the confidence threshold required to buy a stock when the market is in a downtrend. I just need to implement it now.
 
 June 21:
 After taking a bit of a break, I've decided on the following changes to the model:
@@ -32,23 +19,12 @@ After taking a bit of a break, I've decided on the following changes to the mode
   (7) roc should be 5, optimal for both tests
   (8) volume doesn't seem to matter so I'll just get rid of it.
 
-After implementation we have a strategy return of +79.66% for training from 2021-2023 (2y) and testing on 2023-2024 (1y).
-When offset by 0 years it's +18.22%, and when offset by 4 years it's -49.85%. This means that my model is fairly inconsistent.
-Interestingly enough, though, the model's win rate was still 58.57% for the latter. After analyzing the data, I'm pretty sure
-that we can conclude that my intuition for having a higher stop loss was incorrect, and there were a lot of -10% losses.
-So, I'll combat this by making it 0.05 (either lower or higher from a previous day's results, and higher was incorrect)
-Moreover, this is probably linked to the fact that tech stocks were bullish that year overall, so it just should've sat in cash
-for a greater percentage of the time.
+After implementation we have a strategy return of +79.66% for training from 2021-2023 (2y) and testing on 2023-2024 (1y). When offset by 0 years it's +18.22%, and when offset by 4 years it's -49.85%. This means that my model is fairly inconsistent. Interestingly enough, though, the model's win rate was still 58.57% for the latter. After analyzing the data, I'm pretty sure that we can conclude that my intuition for having a higher stop loss was incorrect, and there were a lot of -10% losses. So, I'll combat this by making it 0.05 (either lower or higher from a previous day's results, and higher was incorrect) Moreover, this is probably linked to the fact that tech stocks were bullish that year overall, so it just should've sat in cash for a greater percentage of the time.
 
 June 9:
-Over the past couple of days, I've run the backtesting simulation using a few different parameters. As it turns out, the 
-day-by-day differences are quite small, with the pct returns going from -14.80% to -16.90% and -24.25% today. This isn't 
-as large as I would have thought, but it's still quite substantial. Given that these values are likely to stay around the 
-same, I want to see what modifying my feature values would yield if the simulation was run at a different time in the past.
+Over the past couple of days, I've run the backtesting simulation using a few different parameters. As it turns out, the  day-by-day differences are quite small, with the pct returns going from -14.80% to -16.90% and -24.25% today. This isn't as large as I would have thought, but it's still quite substantial. Given that these values are likely to stay around the same, I want to see what modifying my feature values would yield if the simulation was run at a different time in the past.
 
-Update: After offsetting by 1, 2, and 3 years, I achieved returns of +62.79%, +24.78%, and +29.00%. Not sure what I'm going
-to do with the actual numbers right now, but offsetting by 2-3 years seems to be a good point for me to start testing features 
-to see if the same patterns hold true:
+Update: After offsetting by 1, 2, and 3 years, I achieved returns of +62.79%, +24.78%, and +29.00%. Not sure what I'm going to do with the actual numbers right now, but offsetting by 2-3 years seems to be a good point for me to start testing features to see if the same patterns hold true:
   (1) window=15 -> +24.78%, 10 -> -17.77%, 5 -> +3.45%, 20 -> +40.91%
   (2) confidence_threshold=0.60 -> +24.78%, 0.55 -> +24.78, 0.65 -> +24.78%, 0.70 -> +24.78, 0.75 -> +43.36%
   (3) stop_loss=0.10 -> +24.78%, 0.05 -> +41.55%, 0.15 -> +16.24%, 0 -> +66.99%, 0.20 -> +44.80%
@@ -70,11 +46,7 @@ So, based the analysis of these two days, we can conclude that:
   7. I'm setting roc lower, probably to around 5.
 
 June 6:
-I wanted to start with optimization today, but there was something that came up first. Running the data again yields returns 
-of -14.80%, much less than yesterday's results. This means that our model is very sensitive to small changes in the training
-data, so overfitting is much more of a concern, because small shifts can influence our results by a lot.
-With this in mind, I'm probably going to test changes for the next few days and see if there are consistent windows.
-From my analysis of my code, there are a few different ways we can look to optimize our data:
+I wanted to start with optimization today, but there was something that came up first. Running the data again yields returns of -14.80%, much less than yesterday's results. This means that our model is very sensitive to small changes in the training data, so overfitting is much more of a concern, because small shifts can influence our results by a lot. With this in mind, I'm probably going to test changes for the next few days and see if there are consistent windows. From my analysis of my code, there are a few different ways we can look to optimize our data:
   1. When we build labels, we use the future 15-day average
   2. sma crossover slow & fast windows, other feature parameters
   3. Confidence threshold, other engine configs
@@ -90,46 +62,19 @@ To reduce the risk of overfitting, I will go with pretty big increments for each
   (9) volume=5/20 -> -14.80%, 10/30 -> -9.72%, 20/50 -> -8.90%, None -> +9.99%
 
 June 4:
-I've modified the trading code from backtest_single for trading a portfolio of stocks, so my data should be more realistic
-now. The data shows that I have a 58.62% winrate with 29 trades over 3 years, and that I have a return of +51.60%,
-generating an alpha of +33.22% compared to my benchmark SPY. However, I'm still cautiously optimistic still because I know 
-for a fact that some of these stocks generated like 300% buy & hold. I would like to start trying to optimize my numbers,
-such as the intervals for my moving averages, but I've heard about the dangers of overfitting, so I'll do some more research.
+I've modified the trading code from backtest_single for trading a portfolio of stocks, so my data should be more realistic now. The data shows that I have a 58.62% winrate with 29 trades over 3 years, and that I have a return of +51.60%, generating an alpha of +33.22% compared to my benchmark SPY. However, I'm still cautiously optimistic still because I know for a fact that some of these stocks generated like 300% buy & hold. I would like to start trying to optimize my numbers, such as the intervals for my moving averages, but I've heard about the dangers of overfitting, so I'll do some more research.
 
 June 3:
-From looking at my code and what I see with the stocks I'm looking at overall, the past year was very bullish for these stocks,
-and the prices rose, which makes B&H simply really hard to beat. So, I decided to change it so that the benchmark we're looking at
-is now a stock; right now I'm looking at either making it SPY or QQQ. From the data now, I get positive returns on most stocks;
-however, there are. few stocks, like CRM and WIX, that our strategy does quite poorly on. I tried implementing adx (average
-directional index), which helped bring our return to +30.49% and winrate to +62.24%! However, the alpha (now calculated in
-comparison to our benchmark stock) was still not great. I've also realized something: In an ideal simulation, on each day the 
-simulation takes a look and allocates its money to a stock. In this case, my average returns don't really mean anything 
-because it's not like all of these are going on simultaneously. In the real world, sometimes the model will recognize that 
-the stock just isn't good and won't buy it, and spend money on other things in its portfolio instead. Trying to get a stock 
-that was going down to give positive returns every time just isn't realistic. So, tomorrow I'll try to make a change to my model to 
-make it take in every single one of these stocks as potential options, and decide which position is best to hold.
+From looking at my code and what I see with the stocks I'm looking at overall, the past year was very bullish for these stocks, and the prices rose, which makes B&H simply really hard to beat. So, I decided to change it so that the benchmark we're looking at is now a stock; right now I'm looking at either making it SPY or QQQ. From the data now, I get positive returns on most stocks; however, there are. few stocks, like CRM and WIX, that our strategy does quite poorly on. I tried implementing adx (average directional index), which helped bring our return to +30.49% and winrate to +62.24%! However, the alpha (now calculated in comparison to our benchmark stock) was still not great. I've also realized something: In an ideal simulation, on each day the simulation takes a look and allocates its money to a stock. In this case, my average returns don't really mean anything because it's not like all of these are going on simultaneously. In the real world, sometimes the model will recognize that the stock just isn't good and won't buy it, and spend money on other things in its portfolio instead. Trying to get a stock that was going down to give positive returns every time just isn't realistic. So, tomorrow I'll try to make a change to my model to make it take in every single one of these stocks as potential options, and decide which position is best to hold.
 
 June 2:
-There were a few bugs in my code that I caught today. All in all, these changes actually ended up tanking my alpha as well
-as my returns. Turns out I was getting better results with incorrect training, but it's good that I caught it now, so I
-can probably just focus on increasing alpha now. I was worried that our average trades executed was 27.3, so I tried artificially
-limiting it to 3 days before selling somethign it's bought, but that didn't really help, and brought up a new problem: it can't
-sell when it wants to. So, I put in a bypass as well to help it sell whenever it drops below 7% returns, but it didn't help too 
-much either. I haven't had a lot of time to work on this recently, so I'll try to push our alpha up later.
+There were a few bugs in my code that I caught today. All in all, these changes actually ended up tanking my alpha as well as my returns. Turns out I was getting better results with incorrect training, but it's good that I caught it now, so I can probably just focus on increasing alpha now. I was worried that our average trades executed was 27.3, so I tried artificially limiting it to 3 days before selling somethign it's bought, but that didn't really help, and brought up a new problem: it can't sell when it wants to. So, I put in a bypass as well to help it sell whenever it drops below 7% returns, but it didn't help too much either. I haven't had a lot of time to work on this recently, so I'll try to push our alpha up later.
 
 June 1:
-In an effort to improve the models, I added three new features: bollinger position, rate of change, and volume acceleration.
-I'm pretty sure these helped, for RFC at least, which saw positive alpha for the first time against buy & hold at +51.66%.
-It also only executed 7 trades, meaning that it was more careful, with an 85.71% winrate! However, the linear Regression
-model still isn't doing much. I think it's best if we just focus on the other one for now; this model seems to not work well
-with our new volume features, and is throwing errors related to dividing by 0.
-From this point on, I'll focus on RFC.
+In an effort to improve the models, I added three new features: bollinger position, rate of change, and volume acceleration. I'm pretty sure these helped, for RFC at least, which saw positive alpha for the first time against buy & hold at +51.66%. It also only executed 7 trades, meaning that it was more careful, with an 85.71% winrate! However, the linear Regression model still isn't doing much. I think it's best if we just focus on the other one for now; this model seems to not work well with our new volume features, and is throwing errors related to dividing by 0. From this point on, I'll focus on RFC.
 
 May 31:
-I want to see why my model is underperforming. For example, it could be that it isn’t doing so well because 
-it buys at the wrong time and then it goes down. Then, I could look to fix that by making it a bit harder 
-to buy by cross-checking multiple models’ results together. Or, it could be that it isn’t buying at the 
-right times, in which case I would have to look into another solution.
+I want to see why my model is underperforming. For example, it could be that it isn’t doing so well because it buys at the wrong time and then it goes down. Then, I could look to fix that by making it a bit harder to buy by cross-checking multiple models’ results together. Or, it could be that it isn’t buying at the right times, in which case I would have to look into another solution.
 So, I added performance diagnostics to backtest_simulation. Based on results:
   - While our RFC has a winrate of 60.78%, it is executing trades way to frequently (51 executed trades)
   - Just as suspected, LinearRegression isn't trading at all, which kind of makes sense because APPL went up by a lot.
@@ -144,8 +89,7 @@ There are two main things I would like to try tomorrow:
 May 30:
 Added feature to calculate SMA crossover instead of simply taking sma_5 and sma_20 into account.
 Obviously, just considering sma_5 and sma_20 and not their relationship isn't actually a market predictor.
-I thought that making my indicators better would fix the linreg model issue, but it still performed the exact
-same as buy & hold.
+I thought that making my indicators better would fix the linreg model issue, but it still performed the exact same as buy & hold.
 We are still generating negative alpha with RFC, but it's +50.84% returns, which is an improvement.
 I'd like to add more features to test in the upcoming days.
 
