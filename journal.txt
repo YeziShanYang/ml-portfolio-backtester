@@ -1,3 +1,8 @@
+June 26:
+I was kind of suspicious of my good results from last time, so I decided to look into it. Basically, all of my stocks went up
+over this time period, making it kind of hard for us to not have profit. So, I went ahead and made a few more stock pools,
+with one that's actually balanced this time; it looks like it did pretty well!
+
 June 24:
 Alright so I may have accidentally figured out why my returns seemed so low. Basically, this entire time I was testing my model
 on just tech stocks; the problem was, the trend that I was noticing was that it very very closely resembled the benchmark stock
