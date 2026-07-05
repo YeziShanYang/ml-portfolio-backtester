@@ -148,6 +148,14 @@ As can clearly be seen, the first few years saw my model perform around the same
   <img src="images/SPY_large_test.png" width="900"/>
 </div>
 
+Another surprising incident was the following graph:
+
+<div align="center">
+  <img src="images/INTC_drop.png" width="900"/>
+</div>
+
+I was testing the same 5-5-0 training-testing-offset years, but for some reason there was one really bad trade. Looks like my stop loss triggered: `STOP_LOSS   INTC   21.344599 2024-08-02 -30.327603` It was supposed to sell at a 10% loss, but looks like it went down overnight since my close data isn't continuous. I looked into it, and sure enough there was a historical incident that caused INTC stock to drop at that exact date.
+
 Surprisingly, I found myself drawing parallels to competition math, and I had to think about each problem in my data, even if it led to positive results, and find out what was causing them to happen. In this case, my theory is that since most of my features in my model are related to tracking trends, the first few years the market was pretty choppy, leading my signals to be more inconsistent; this can be seen by the more stagnant benchmark curve. The latter years were where the market really started to show an uptrend, which is why my model performed better.
 
 ## Resources
