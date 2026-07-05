@@ -236,7 +236,8 @@ Bollinger Position measures where price relative to **volatility**. To calculate
 1. Simple Moving Average `sma = close.rolling(window).mean()`
 2. Standard Deviation `std = close.rolling(window).std()`. Luckily, pandas has us covered for both of these.
 3. Bollinger Position
-$$BP = \frac{\text{close} - SMA}{\text{std} \cdot \text{num\_std}}$$
+
+$$BP = \frac{\text{close} - SMA}{\text{std} \cdot \text{numstd}}$$
 
 ### EWM (Exponential Weighted Moving Average)
 
