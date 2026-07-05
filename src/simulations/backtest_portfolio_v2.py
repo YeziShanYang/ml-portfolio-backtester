@@ -165,9 +165,6 @@ class PortfolioBacktestEngine:
         completed_trades = []
         portfolio_values = []
 
-        spy_sma200 = benchmark_prices.rolling(window=200).mean()
-        in_bull_series = benchmark_prices > spy_sma200
-
         for i in range(len(common_index)):
             date = common_index[i]
  
