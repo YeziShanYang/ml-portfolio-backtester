@@ -32,8 +32,14 @@ I have left most of the Python files from previous trials and iterations intact 
 3. [indicators.py](/src/indicators.py): I put the formulas for calculating the features in here; creating new features is super easy because I can just put the function in here and add it to the features dictionary.
 4. [stock_screener.py](/src/stock_screener.py): This probably should've been just a single function in the actual model file (the other functions don't end up being used) but I decided to use it to get the data for all of the stocks in the entire project.
 
+### What exactly is a backtesting model?
+
+First, let's tackle "**model**." Just like how a normal trading strategy might tell you to buy or sell a certain stock based on candlestick patterns or SMA crosses, a model is just a program/algorithm that tells us what to buy instead; however, instead of candlestick patterns, we use things called **features**, variables that are calculated using values such as close price and volume of each stock in the portfolio for each day in the training/testing interval. My model in particular uses machine learning to combine these together and turn them into meaningful predictions (see [Random Forest Classifier](#random-forest-classifier) for a more technical explanation).
+
+**Backtesting** specifically refers to testing a model's predictions back on past data (hence the name). In a setting where we wish to determine whether or not our strategy (i.e. our features) works, backtesting allows us to quickly and easily run tests to see the exact returns that our model will give on specific training and testing windows. In particular, **walk-forward testing** is possible, where we loop the model through a bunch of different training and testing windows to accurately gauge its worth, consistency, and level of [overfitting](#overfitting). An additional benefit of backtesting is that we can mass-handle feature/label generation because all of the data we need is imported at once for both the training and testing windows. Theoretically, after we finish testing the model by backtesting, we can easily change it to a normal present-trading informative guide that helps us make trades.
+
 ## Features
-Our backtesting model [backtest_portfolio_v2.py](/src/simulations/backtest_portfolio_v2.py) uses the Random Forest Classifier model from scikit-learn's ensemble module; I chose it over other models such as XGBClassifier (gradient boosting), Linear Regression, and Logistic Regression because it was both complex enough (and customizable) to calculate all of the data while simultaneously being simple enough to understand; a more complete explanation of how the RFC model applies to this project context specifically can be found in [Random Forest Classifier](#random-forest-classifier).
+Our backtesting model [backtest_portfolio_v2.py](/src/simulations/backtest_portfolio_v2.py) uses the Random Forest Classifier model from scikit-learn's ensemble module; I chose it over other models such as XGBClassifier (gradient boosting), Linear Regression, and Logistic Regression because it was both complex enough (and customizable) to incorporate all of the data into its calculations while simultaneously being simple enough to understand; a more complete explanation of how the RFC model applies to this project context specifically can be found in [Random Forest Classifier](#random-forest-classifier).
 
 There are a wide variety of features and conditions that I considered implementing into this model; they are listed, along with whether or not I included them and their given values (if any) below:
 
@@ -233,7 +239,7 @@ Currently, the model filters out stocks with an $ATR < 20$, which is a weak tren
 ### RSI (Relative Strength Index)
 
 RSI measures **momentum**, and measures how aggressively price has been moving up vs down over the past 14 days. Calculating RSI is easier than ADX:
-1. Calculate gain $g$ and loss $l$ for each day. For example, if a stock grows $\$3$, $g = 3$ and $l = 0$.
+1. Calculate gain $g$ and loss $l$ for each day. For example, if a stock grows $3$ dollars, $g = 3$ and $l = 0$.
 2. Smooth both with EWM `avg_gain = gains.ewm(com=window - 1, adjust=False).mean()`
 3. Relative strength $RS = \frac{g}{l}$.
 4. $RSI = 100 - \left(\frac{100} {1 + RS}\right)$ to put it on an index of 0-100.
