@@ -13,7 +13,7 @@
 - [Appendix](#appendix)
 
 ## Overview
-This project was originally intended as a way for me to learn some Python first-hand, but has quickly developed into a mashup of various fields that I'm interested in: computer science, finance, and machine learning. The project itself can be thought of as a sort of playground for my thoughts and observations, some of which I have recorded in my [journal](/journal.md); this has produced my final project, a [backtesting model](/src/simulations/backtest_portfolio_v2.py) that uses a Random Forest Classifier machine learning model trained and tested on a portfolio of 15 stocks that successfully outperformed the S&P 500 by $+250.17\%$ over a period of 5 years.
+This project was originally intended as a way for me to learn some Python first-hand, but has quickly developed into a mashup of various fields that I'm interested in: computer science, finance, and machine learning. The project itself can be thought of as a sort of playground for my thoughts and observations, some of which I have recorded in my [journal](/journal.md); this has produced my final project, a [backtesting model](/src/simulations/backtest_portfolio_v2.py) that uses a Random Forest Classifier machine learning model trained and tested on a portfolio of 15 stocks that successfully outperformed the S&P 500 by $+250.14\%$ over a period of 5 years.
 
 In the process of this journey, I've gained familiarity with the following:
 1. Virtual Environments
