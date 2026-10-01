@@ -13,7 +13,7 @@
 - [Appendix](#appendix)
 
 ## Overview
-This project was originally intended as a way for me to learn some Python first-hand, but has quickly developed into a mashup of various fields that I'm interested in: computer science, finance, and machine learning. The project itself can be thought of as a sort of playground for my thoughts and observations, some of which I have recorded in my [journal](/journal.md); this has produced my final project, a [backtesting model](/src/simulations/backtest_portfolio_v2.py) that uses a Random Forest Classifier machine learning model trained and tested on a portfolio of 15 stocks that successfully outperformed the S&P 500 by $+250.17\%$ over a period of 5 years.
+This project was originally intended as a way for me to learn some Python first-hand, but has quickly developed into a mashup of various fields that I'm interested in: computer science, finance, and machine learning. The project itself can be thought of as a sort of playground for my thoughts and observations, some of which I have recorded in my [journal](journal.md); this has produced my final project, a [backtesting model](src/simulations/backtest_portfolio_v2.py) that uses a Random Forest Classifier machine learning model trained and tested on a portfolio of 15 stocks that successfully outperformed the S&P 500 by $+250.17\%$ over a period of 5 years.
 
 In the process of this journey, I've gained familiarity with the following:
 1. Virtual Environments
@@ -27,10 +27,10 @@ In the process of this journey, I've gained familiarity with the following:
 9. Various tools, calculations, indices, and measurements for quantifying stocks
 
 I have left most of the Python files from previous trials and iterations intact to preserve the process; the important ones are listed first here:
-1. [notebooks](/notebooks): this contains all of my Jupyter notebooks, and is my record of learning syntax and "getting things to work." Among these, [04: model_testing](/notebooks/04_model_testing.ipynb) is where my models were tested, graphs were made, and stock pools incorporated. [05: stock_pool](05_stock_pool.ipynb) is an attempt to account for overfitting, which will be addressed in more detail [in a later section](#overfitting).
-2. [simulations](/src/simulations): [backtest_portfolio_v2.py](/src/simulations/backtest_portfolio_v2.py) is my full final model, with the ability to pick the best stock out of a given pool (or sit in cash). [backtest_single_v1.py](src/sinulations/backtest_single_v1.py) was my original backtesting model, which only traded one stock (determined whether to buy or sit in cash).
-3. [indicators.py](/src/indicators.py): I put the formulas for calculating the features in here; creating new features is super easy because I can just put the function in here and add it to the features dictionary.
-4. [stock_screener.py](/src/stock_screener.py): This probably should've been just a single function in the actual model file (the other functions don't end up being used) but I decided to use it to get the data for all of the stocks in the entire project.
+1. [notebooks](notebooks): this contains all of my Jupyter notebooks, and is my record of learning syntax and "getting things to work." Among these, [04: model_testing](notebooks/04_model_testing.ipynb) is where my models were tested, graphs were made, and stock pools incorporated. [05: stock_pool](notebooks/05_stock_pool.ipynb) is an attempt to account for overfitting, which will be addressed in more detail [in a later section](#overfitting).
+2. [simulations](src/simulations): [backtest_portfolio_v2.py](src/simulations/backtest_portfolio_v2.py) is my full final model, with the ability to pick the best stock out of a given pool (or sit in cash). [backtest_single_v1.py](src/simulations/backtest_single_v1.py) was my original backtesting model, which only traded one stock (determined whether to buy or sit in cash).
+3. [indicators.py](src/indicators.py): I put the formulas for calculating the features in here; creating new features is super easy because I can just put the function in here and add it to the features dictionary.
+4. [stock_screener.py](src/stock_screener.py): This probably should've been just a single function in the actual model file (the other functions don't end up being used) but I decided to use it to get the data for all of the stocks in the entire project.
 
 ### What exactly is a backtesting model?
 
@@ -39,7 +39,7 @@ First, let's tackle "**model**." Just like how a normal trading strategy might t
 **Backtesting** specifically refers to testing a model's predictions back on past data (hence the name). In a setting where we wish to determine whether or not our strategy (i.e. our features) works, backtesting allows us to quickly and easily run tests to see the exact returns that our model will give on specific training and testing windows. In particular, **walk-forward testing** is possible, where we loop the model through a bunch of different training and testing windows to accurately gauge its worth, consistency, and level of [overfitting](#overfitting). An additional benefit of backtesting is that we can mass-handle feature/label generation because all of the data we need is imported at once for both the training and testing windows. Theoretically, after we finish testing the model by backtesting, we can easily change it to a normal present-trading informative guide that helps us make trades.
 
 ## Features
-Our backtesting model [backtest_portfolio_v2.py](/src/simulations/backtest_portfolio_v2.py) uses the Random Forest Classifier model from scikit-learn's ensemble module; I chose it over other models such as XGBClassifier (gradient boosting), Linear Regression, and Logistic Regression because it was both complex enough (and customizable) to incorporate all of the data into its calculations while simultaneously being simple enough to understand; a more complete explanation of how the RFC model applies to this project context specifically can be found in [Random Forest Classifier](#random-forest-classifier).
+Our backtesting model [backtest_portfolio_v2.py](src/simulations/backtest_portfolio_v2.py) uses the Random Forest Classifier model from scikit-learn's ensemble module; I chose it over other models such as XGBClassifier (gradient boosting), Linear Regression, and Logistic Regression because it was both complex enough (and customizable) to incorporate all of the data into its calculations while simultaneously being simple enough to understand; a more complete explanation of how the RFC model applies to this project context specifically can be found in [Random Forest Classifier](#random-forest-classifier).
 
 There are a wide variety of features and conditions that I considered implementing into this model; they are listed, along with whether or not I included them and their given values (if any) below:
 
@@ -78,7 +78,7 @@ ticker_pool_balanced = [
 ]
 ```
 
-that I screened for a balance of overperformers, underperformers, and stable stocks through [05_stock_pool.ipynb](/notebooks/05_stock_pool.ipynb). It simulated a day-by-day buy-or-sell strategy through 5 years of testing data (2021-06-28 to 2026-06-26) with a training window of 5 years as well (2016-06-27 to 2021-06-25). The detailed trade log can be found in [04_model_testing.ipynb](/notebooks/04_model_testing.ipynb). Over this period of 5 years, the model experienced a return of $+250.14\%$ ($\sim3.5\times$), outperforming the benchmark S&P 500 (SPY) and generating an alpha of $+172.73\%.$ It executed 153 total trades at an average of around one trade every 12 days, and had a winrate on trades of $54.90\%$.
+that I screened for a balance of overperformers, underperformers, and stable stocks through [05_stock_pool.ipynb](notebooks/05_stock_pool.ipynb). It simulated a day-by-day buy-or-sell strategy through 5 years of testing data (2021-06-28 to 2026-06-26) with a training window of 5 years as well (2016-06-27 to 2021-06-25). The detailed trade log can be found in [04_model_testing.ipynb](notebooks/04_model_testing.ipynb). Over this period of 5 years, the model experienced a return of $+250.14\%$ ($\sim3.5\times$), outperforming the benchmark S&P 500 (SPY) and generating an alpha of $+172.73\%.$ It executed 153 total trades at an average of around one trade every 12 days, and had a winrate on trades of $54.90\%$.
 
 ## Reflection
 
@@ -118,7 +118,7 @@ This set of stocks, however, suffered from the second issue:
 
 2. All of the stocks that I chose suffered from survivorship bias; the more well-known ones were well-known because they performed well, and thus it would've been hard for my model to *not* see positive results.
 
-So, I wrote up some code in [05_stock_pool](/notebooks/05_stock_pool), and finally came up with the following:
+So, I wrote up some code in [05_stock_pool](notebooks/05_stock_pool.ipynb), and finally came up with the following:
 
 ```python
 ticker_pool_balanced = [
